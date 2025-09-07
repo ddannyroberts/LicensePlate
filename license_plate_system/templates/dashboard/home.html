@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - LicenseGuard AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --dark-bg: #0f0f23;
+            --card-bg: rgba(15, 15, 35, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* Background Animation */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(45deg, #0f0f23, #1a1a3e, #2d2d5a);
+            animation: gradientShift 8s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background: linear-gradient(45deg, #0f0f23, #1a1a3e, #2d2d5a); }
+            50% { background: linear-gradient(45deg, #1a1a3e, #2d2d5a, #3f3f7a); }
+        }
+
+        /* Navigation */
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 35px 65px rgba(0,0,0,0.4);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        /* Statistics Cards */
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card.primary { background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2)); }
+        .stat-card.success { background: linear-gradient(135deg, rgba(132, 250, 176, 0.2), rgba(143, 211, 244, 0.2)); }
+        .stat-card.info { background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2)); }
+        .stat-card.warning { background: linear-gradient(135deg, rgba(240, 147, 251, 0.2), rgba(245, 87, 108, 0.2)); }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed rgba(102, 126, 234, 0.5);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        /* Buttons */
+        .btn-3d {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: 600;
+            padding: 0.8rem 2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-3d::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn-3d:hover::before {
+            left: 100%;
+        }
+
+        .btn-3d:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Tables */
+        .table-dark-custom {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .table-dark-custom th {
+            background: rgba(102, 126, 234, 0.2);
+            border: none;
+            padding: 1rem;
+            color: #ffffff;
+        }
+
+        .table-dark-custom td {
+            border: none;
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .table-dark-custom tbody tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        /* Status badges */
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-authorized {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        .status-denied {
+            background: var(--secondary-gradient);
+            color: white;
+        }
+
+        .status-processing {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            color: #2d3436;
+        }
+
+        /* Progress Bar */
+        .progress-3d {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-3d {
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-bar-3d::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.5rem 1rem;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-animation"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>LicenseGuard AI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars text-white"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#upload-section">
+                            <i class="fas fa-upload me-1"></i>Upload Video
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#history-section">
+                            <i class="fas fa-history me-1"></i>History
+                        </a>
+                    </li>
+                    {% if user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/vehicles/authorized/">
+                            <i class="fas fa-car me-1"></i>Vehicles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/vehicles/access-logs/">
+                            <i class="fas fa-list me-1"></i>Access Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/admin/">
+                            <i class="fas fa-cog me-1"></i>Admin
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>{{ user.first_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/auth/profile/">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/auth/logout/">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Welcome Section -->
+        <div class="row mb-5">
+            <div class="col-12" data-aos="fade-up">
+                <div class="glass-card p-4 text-center">
+                    <h1 class="display-5 fw-bold mb-3">
+                        Welcome back, {{ user.first_name|default:user.username }}! 👋
+                    </h1>
+                    <p class="lead text-muted">
+                        Ready to analyze some license plates today? Upload your videos below or check your processing history.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-5">
+            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="stat-card primary">
+                    <i class="fas fa-video stat-icon"></i>
+                    <div class="stat-number">{{ stats.total_detections|default:0 }}</div>
+                    <div class="text-muted">Videos Processed</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="stat-card success">
+                    <i class="fas fa-check-circle stat-icon"></i>
+                    <div class="stat-number">{{ stats.successful_detections|default:0 }}</div>
+                    <div class="text-muted">Successful Detections</div>
+                </div>
+            </div>
+            {% if user.is_staff %}
+            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="stat-card info">
+                    <i class="fas fa-car stat-icon"></i>
+                    <div class="stat-number">{{ stats.total_authorized_vehicles|default:0 }}</div>
+                    <div class="text-muted">Authorized Vehicles</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="stat-card warning">
+                    <i class="fas fa-door-open stat-icon"></i>
+                    <div class="stat-number">{{ stats.authorized_today|default:0 }}</div>
+                    <div class="text-muted">Access Today</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Video Upload Section -->
+        <div class="row mb-5" id="upload-section">
+            <div class="col-12" data-aos="fade-up">
+                <div class="glass-card p-4">
+                    <h2 class="mb-4">
+                        <i class="fas fa-upload me-2"></i>Upload Video for Analysis
+                    </h2>
+                    
+                    <form id="uploadForm" action="/vehicles/upload-video/" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="upload-area" id="uploadArea">
+                            <div class="mb-3">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                <h4>Drag & Drop Video Here</h4>
+                                <p class="text-muted mb-3">or click to browse files</p>
+                                <input type="file" id="videoFile" name="video_file" accept="video/*" class="d-none" required>
+                                <button type="button" class="btn btn-3d" onclick="document.getElementById('videoFile').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Choose Video File
+                                </button>
+                            </div>
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Supported formats: MP4, AVI, MOV | Max size: 200MB
+                                </small>
+                            </div>
+                        </div>
+
+                        <div id="selectedFile" class="mt-3" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file-video me-2"></i>
+                                <span id="fileName"></span>
+                                <span id="fileSize" class="ms-2 text-muted"></span>
+                            </div>
+                            <button type="submit" class="btn btn-3d btn-lg">
+                                <i class="fas fa-rocket me-2"></i>Start Processing
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing History -->
+        <div class="row mb-5" id="history-section">
+            <div class="col-12" data-aos="fade-up">
+                <div class="glass-card p-4">
+                    <h2 class="mb-4">
+                        <i class="fas fa-history me-2"></i>Processing History
+                    </h2>
+
+                    {% if recent_detections %}
+                    <div class="table-responsive">
+                        <table class="table table-dark-custom">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Video</th>
+                                    <th>License Plate</th>
+                                    <th>Vehicle Type</th>
+                                    <th>Status</th>
+                                    <th>Confidence</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detection in recent_detections %}
+                                <tr>
+                                    <td>{{ detection.upload_timestamp|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        <i class="fas fa-file-video text-primary me-2"></i>
+                                        {{ detection.video_file.name|truncatechars:20 }}
+                                    </td>
+                                    <td>
+                                        {% if detection.plate_text %}
+                                            <span class="badge bg-info">{{ detection.plate_text }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Processing...</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ detection.vehicle_type|default:"Unknown" }}</td>
+                                    <td>
+                                        {% if detection.status == 'authorized' %}
+                                            <span class="status-badge status-authorized">Authorized</span>
+                                        {% elif detection.status == 'unauthorized' %}
+                                            <span class="status-badge status-denied">Denied</span>
+                                        {% elif detection.status == 'processing' %}
+                                            <span class="status-badge status-processing">Processing</span>
+                                        {% else %}
+                                            <span class="status-badge status-processing">{{ detection.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if detection.confidence_score %}
+                                            <div class="progress-3d">
+                                                <div class="progress-bar-3d" style="width: {{ detection.confidence_score|floatformat:0 }}%"></div>
+                                            </div>
+                                            <small class="text-muted">{{ detection.confidence_score|floatformat:1 }}%</small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if detection.status == 'processing' %}
+                                            <a href="/vehicles/process-video/{{ detection.id }}/" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>Monitor
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-info" onclick="viewDetails({{ detection.id }})">
+                                                <i class="fas fa-info-circle me-1"></i>Details
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Processing History</h4>
+                        <p class="text-muted">Upload your first video to get started!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if user.is_staff and recent_access %}
+        <!-- Admin: Recent Access Logs -->
+        <div class="row mb-5">
+            <div class="col-12" data-aos="fade-up">
+                <div class="glass-card p-4">
+                    <h2 class="mb-4">
+                        <i class="fas fa-shield-alt me-2"></i>Recent Access Attempts
+                    </h2>
+
+                    <div class="table-responsive">
+                        <table class="table table-dark-custom">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>License Plate</th>
+                                    <th>Status</th>
+                                    <th>Gate Action</th>
+                                    <th>Owner</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_access %}
+                                <tr>
+                                    <td>{{ log.timestamp|date:"H:i" }}</td>
+                                    <td><span class="badge bg-info">{{ log.plate_number }}</span></td>
+                                    <td>
+                                        {% if log.authorized %}
+                                            <span class="status-badge status-authorized">Authorized</span>
+                                        {% else %}
+                                            <span class="status-badge status-denied">Denied</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.gate_action == 'opened' %}
+                                            <i class="fas fa-door-open text-success me-1"></i>Opened
+                                        {% else %}
+                                            <i class="fas fa-door-closed text-danger me-1"></i>Denied
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.vehicle %}
+                                            {{ log.vehicle.owner_name }}
+                                        {% else %}
+                                            <span class="text-muted">Unknown</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.confidence|floatformat:1 }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <a href="/vehicles/access-logs/" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-1"></i>View All Access Logs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+
+        // File upload functionality
+        const uploadArea = document.getElementById('uploadArea');
+        const videoFile = document.getElementById('videoFile');
+        const selectedFile = document.getElementById('selectedFile');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // File input change
+        videoFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('video/')) {
+                alert('Please select a valid video file.');
+                return;
+            }
+
+            if (file.size > 200 * 1024 * 1024) {
+                alert('File size must be less than 200MB.');
+                return;
+            }
+
+            fileName.textContent = file.name;
+            fileSize.textContent = `(${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+            selectedFile.style.display = 'block';
+        }
+
+        // View details function
+        function viewDetails(detectionId) {
+            alert(`Viewing details for detection ID: ${detectionId}`);
+            // Here you would typically open a modal or navigate to a details page
+        }
+
+        // Auto-refresh for processing status
+        setInterval(() => {
+            // Check for processing items and update their status
+            const processingRows = document.querySelectorAll('.status-processing');
+            if (processingRows.length > 0) {
+                location.reload();
+            }
+        }, 30000); // Refresh every 30 seconds if there are processing items
+    </script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Video - LicenseGuard AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 3rem;
+        margin: 2rem auto;
+        max-width: 800px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .upload-area {
+        border: 3px dashed rgba(52, 152, 219, 0.6);
+        border-radius: 15px;
+        padding: 4rem 2rem;
+        text-align: center;
+        background: rgba(52, 152, 219, 0.05);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .upload-area:hover {
+        border-color: #3498db;
+        background: rgba(52, 152, 219, 0.1);
+        transform: translateY(-5px);
+    }
+
+    .upload-area.dragover {
+        border-color: #2ecc71;
+        background: rgba(46, 204, 113, 0.1);
+        transform: scale(1.02);
+    }
+
+    .upload-area input[type="file"] {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .upload-icon {
+        font-size: 4rem;
+        color: #3498db;
+        margin-bottom: 1rem;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .progress-container {
+        display: none;
+        margin-top: 2rem;
+    }
+
+    .progress-bar-custom {
+        height: 8px;
+        background: linear-gradient(90deg, #3498db, #2ecc71);
+        border-radius: 10px;
+        transition: width 0.3s ease;
+    }
+
+    .video-preview {
+        display: none;
+        margin-top: 2rem;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    .video-preview video {
+        width: 100%;
+        height: auto;
+        max-height: 300px;
+    }
+
+    .file-info {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+        display: none;
+    }
+
+    .process-btn {
+        background: linear-gradient(45deg, #3498db, #2ecc71);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        margin-top: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+    }
+
+    .process-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(52, 152, 219, 0.4);
+    }
+
+    .results-container {
+        display: none;
+        margin-top: 2rem;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .detection-result {
+        background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(52, 152, 219, 0.2));
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">
+                <i class="fas fa-video text-primary me-3"></i>
+                Video Upload & Analysis
+            </h1>
+            <p class="text-center text-muted mb-5">Upload your video file for license plate detection and analysis</p>
+        </div>
+    </div>
+
+    <div class="upload-container">
+        <form id="uploadForm" action="{% url 'vehicle_control:upload_video' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <h4 class="text-white mb-3">Drag & Drop Your Video Here</h4>
+                <p class="text-muted mb-3">or click to browse files</p>
+                <input type="file" id="videoFile" name="video_file" accept="video/*" required>
+                <small class="text-muted d-block">Supported formats: MP4, AVI, MOV, WMV (Max: 200MB)</small>
+            </div>
+        </form>
+
+        <div class="file-info" id="fileInfo">
+            <h6 class="text-white">File Information:</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">Name: <span id="fileName" class="text-white"></span></small>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Size: <span id="fileSize" class="text-white"></span></small>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-preview" id="videoPreview">
+            <video controls id="previewVideo">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <h6 class="text-white mb-2">Processing Video...</h6>
+            <div class="progress bg-dark">
+                <div class="progress-bar progress-bar-custom" role="progressbar" style="width: 0%" id="progressBar">
+                    <span class="progress-text">0%</span>
+                </div>
+            </div>
+            <small class="text-muted mt-2 d-block" id="progressStatus">Initializing...</small>
+        </div>
+
+        <div class="text-center">
+            <button type="button" class="process-btn" id="processBtn" style="display: none;" onclick="startProcessing()">
+                <i class="fas fa-cogs me-2"></i>
+                Start Analysis
+            </button>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <h5 class="text-white mb-3">
+                <i class="fas fa-chart-line text-success me-2"></i>
+                Detection Results
+            </h5>
+            <div id="detectionResults">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('videoFile');
+const fileInfo = document.getElementById('fileInfo');
+const videoPreview = document.getElementById('videoPreview');
+const previewVideo = document.getElementById('previewVideo');
+const processBtn = document.getElementById('processBtn');
+const progressContainer = document.getElementById('progressContainer');
+const resultsContainer = document.getElementById('resultsContainer');
+
+// Drag and drop handlers
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileSelect(files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+    }
+});
+
+function handleFileSelect(file) {
+    // Validate file type
+    const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv'];
+    if (!allowedTypes.includes(file.type)) {
+        alert('Please select a valid video file (MP4, AVI, MOV, WMV)');
+        return;
+    }
+
+    // Validate file size (200MB)
+    if (file.size > 200 * 1024 * 1024) {
+        alert('File size must be less than 200MB');
+        return;
+    }
+
+    // Show file info
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatFileSize(file.size);
+    fileInfo.style.display = 'block';
+
+    // Show video preview
+    const url = URL.createObjectURL(file);
+    previewVideo.src = url;
+    videoPreview.style.display = 'block';
+    processBtn.style.display = 'inline-block';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function startProcessing() {
+    const formData = new FormData();
+    formData.append('video_file', fileInput.files[0]);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    progressContainer.style.display = 'block';
+    processBtn.style.display = 'none';
+
+    // Simulate progress
+    let progress = 0;
+    const progressBar = document.getElementById('progressBar');
+    const progressStatus = document.getElementById('progressStatus');
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = progress + '%';
+        progressBar.querySelector('.progress-text').textContent = Math.round(progress) + '%';
+        
+        if (progress < 30) {
+            progressStatus.textContent = 'Uploading video...';
+        } else if (progress < 60) {
+            progressStatus.textContent = 'Processing frames...';
+        } else if (progress < 90) {
+            progressStatus.textContent = 'Detecting license plates...';
+        }
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+            finishProcessing();
+        }
+    }, 500);
+
+    // Here you would normally send the AJAX request to process the video
+}
+
+function finishProcessing() {
+    const progressBar = document.getElementById('progressBar');
+    const progressStatus = document.getElementById('progressStatus');
+    
+    progressBar.style.width = '100%';
+    progressBar.querySelector('.progress-text').textContent = '100%';
+    progressStatus.textContent = 'Analysis complete!';
+    
+    // Show mock results
+    setTimeout(() => {
+        showResults();
+    }, 1000);
+}
+
+function showResults() {
+    const results = [
+        {
+            plate: 'ABC-1234',
+            confidence: 95.6,
+            timestamp: '00:15.3',
+            status: 'Authorized'
+        },
+        {
+            plate: 'XYZ-9876',
+            confidence: 87.2,
+            timestamp: '01:32.7',
+            status: 'Unknown'
+        }
+    ];
+
+    const resultsHTML = results.map(result => `
+        <div class="detection-result">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <h6 class="text-white mb-0">License Plate</h6>
+                    <strong class="text-primary">${result.plate}</strong>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-white mb-0">Confidence</h6>
+                    <span class="badge bg-success">${result.confidence}%</span>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-white mb-0">Time</h6>
+                    <span class="text-muted">${result.timestamp}</span>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-white mb-0">Status</h6>
+                    <span class="badge ${result.status === 'Authorized' ? 'bg-success' : 'bg-warning'}">${result.status}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    document.getElementById('detectionResults').innerHTML = resultsHTML;
+    resultsContainer.style.display = 'block';
+}
+</script>
+{% endblock %}

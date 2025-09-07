@@ -1,0 +1,544 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Authorized Vehicles - LicenseGuard AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .vehicles-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 1rem 0;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .vehicle-card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .vehicle-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .vehicle-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 1rem;
+    }
+
+    .plate-number-large {
+        font-family: 'Courier New', monospace;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #3498db;
+        background: rgba(52, 152, 219, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: 2px solid rgba(52, 152, 219, 0.5);
+    }
+
+    .vehicle-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-active {
+        color: #2ecc71;
+        background: rgba(46, 204, 113, 0.2);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+
+    .status-expired {
+        color: #e74c3c;
+        background: rgba(231, 76, 60, 0.2);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+
+    .vehicle-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    .info-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.75rem;
+        border-radius: 8px;
+        border-left: 3px solid #3498db;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        color: #fff;
+        font-weight: 500;
+    }
+
+    .vehicle-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-edit {
+        background: linear-gradient(45deg, #3498db, #2980b9);
+        color: white;
+    }
+
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+    }
+
+    .btn-delete {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        color: white;
+    }
+
+    .btn-delete:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+    }
+
+    .btn-toggle {
+        background: linear-gradient(45deg, #f39c12, #e67e22);
+        color: white;
+    }
+
+    .btn-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+    }
+
+    .add-vehicle-btn {
+        background: linear-gradient(45deg, #2ecc71, #27ae60);
+        border: none;
+        color: white;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px rgba(46, 204, 113, 0.3);
+        margin-bottom: 2rem;
+    }
+
+    .add-vehicle-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(46, 204, 113, 0.4);
+    }
+
+    .search-bar {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 25px;
+        padding: 0.75rem 1.5rem;
+        color: #fff;
+        margin-bottom: 2rem;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .search-bar:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .search-bar::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .stats-summary {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-item {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(46, 204, 113, 0.2));
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        flex: 1;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #fff;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+
+    .access-level-full {
+        color: #2ecc71;
+    }
+
+    .access-level-limited {
+        color: #f39c12;
+    }
+
+    .access-level-visitor {
+        color: #9b59b6;
+    }
+
+    .access-level-emergency {
+        color: #e74c3c;
+    }
+
+    .vehicle-type-icon {
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">
+                <i class="fas fa-car text-primary me-3"></i>
+                Authorized Vehicles Management
+            </h1>
+            <p class="text-center text-muted mb-5">Manage authorized vehicles and their access permissions</p>
+        </div>
+    </div>
+
+    <!-- Statistics Summary -->
+    <div class="stats-summary">
+        <div class="stat-item">
+            <div class="stat-number">47</div>
+            <div class="stat-label">Total Vehicles</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">42</div>
+            <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">3</div>
+            <div class="stat-label">Expired</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">2</div>
+            <div class="stat-label">Inactive</div>
+        </div>
+    </div>
+
+    <div class="vehicles-container">
+        <!-- Controls -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <button class="add-vehicle-btn" onclick="window.location.href='{% url 'vehicle_control:add_vehicle' %}'">
+                <i class="fas fa-plus me-2"></i>
+                Add New Vehicle
+            </button>
+            <input type="text" class="search-bar" placeholder="Search by plate number, owner name..." 
+                   id="searchInput" onkeyup="searchVehicles()">
+        </div>
+
+        <!-- Vehicles List -->
+        <div id="vehiclesList">
+            <!-- Vehicle Card 1 -->
+            <div class="vehicle-card" data-plate="ABC-1234" data-owner="john smith">
+                <div class="vehicle-header">
+                    <div class="plate-number-large">ABC-1234</div>
+                    <div class="vehicle-status">
+                        <span class="status-active">
+                            <i class="fas fa-check-circle me-1"></i>Active
+                        </span>
+                    </div>
+                </div>
+
+                <div class="vehicle-info">
+                    <div class="info-item">
+                        <div class="info-label">Owner Name</div>
+                        <div class="info-value">John Smith</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Contact</div>
+                        <div class="info-value">+1 (555) 123-4567</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Vehicle Type</div>
+                        <div class="info-value">
+                            <i class="fas fa-car vehicle-type-icon"></i>Car
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Brand & Model</div>
+                        <div class="info-value">Toyota Camry</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Color</div>
+                        <div class="info-value">Blue</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Access Level</div>
+                        <div class="info-value access-level-full">
+                            <i class="fas fa-key me-1"></i>Full Access
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Registered Date</div>
+                        <div class="info-value">2025-08-15</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Expiry Date</div>
+                        <div class="info-value">2026-08-15</div>
+                    </div>
+                </div>
+
+                <div class="vehicle-actions">
+                    <button class="btn-action btn-edit" onclick="editVehicle('ABC-1234')">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </button>
+                    <button class="btn-action btn-toggle" onclick="toggleVehicle('ABC-1234')">
+                        <i class="fas fa-toggle-on me-1"></i>Disable
+                    </button>
+                    <button class="btn-action btn-delete" onclick="deleteVehicle('ABC-1234')">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vehicle Card 2 -->
+            <div class="vehicle-card" data-plate="XYZ-9876" data-owner="sarah johnson">
+                <div class="vehicle-header">
+                    <div class="plate-number-large">XYZ-9876</div>
+                    <div class="vehicle-status">
+                        <span class="status-active">
+                            <i class="fas fa-check-circle me-1"></i>Active
+                        </span>
+                    </div>
+                </div>
+
+                <div class="vehicle-info">
+                    <div class="info-item">
+                        <div class="info-label">Owner Name</div>
+                        <div class="info-value">Sarah Johnson</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Contact</div>
+                        <div class="info-value">+1 (555) 987-6543</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Vehicle Type</div>
+                        <div class="info-value">
+                            <i class="fas fa-truck vehicle-type-icon"></i>SUV
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Brand & Model</div>
+                        <div class="info-value">BMW X5</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Color</div>
+                        <div class="info-value">White</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Access Level</div>
+                        <div class="info-value access-level-limited">
+                            <i class="fas fa-key me-1"></i>Limited Access
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Registered Date</div>
+                        <div class="info-value">2025-07-22</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Expiry Date</div>
+                        <div class="info-value">2025-12-31</div>
+                    </div>
+                </div>
+
+                <div class="vehicle-actions">
+                    <button class="btn-action btn-edit" onclick="editVehicle('XYZ-9876')">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </button>
+                    <button class="btn-action btn-toggle" onclick="toggleVehicle('XYZ-9876')">
+                        <i class="fas fa-toggle-on me-1"></i>Disable
+                    </button>
+                    <button class="btn-action btn-delete" onclick="deleteVehicle('XYZ-9876')">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vehicle Card 3 - Expired -->
+            <div class="vehicle-card" data-plate="DEF-5678" data-owner="mike wilson">
+                <div class="vehicle-header">
+                    <div class="plate-number-large">DEF-5678</div>
+                    <div class="vehicle-status">
+                        <span class="status-expired">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Expired
+                        </span>
+                    </div>
+                </div>
+
+                <div class="vehicle-info">
+                    <div class="info-item">
+                        <div class="info-label">Owner Name</div>
+                        <div class="info-value">Mike Wilson</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Contact</div>
+                        <div class="info-value">+1 (555) 456-7890</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Vehicle Type</div>
+                        <div class="info-value">
+                            <i class="fas fa-motorcycle vehicle-type-icon"></i>Motorcycle
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Brand & Model</div>
+                        <div class="info-value">Harley Davidson</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Color</div>
+                        <div class="info-value">Black</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Access Level</div>
+                        <div class="info-value access-level-visitor">
+                            <i class="fas fa-key me-1"></i>Visitor Access
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Registered Date</div>
+                        <div class="info-value">2024-12-01</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Expiry Date</div>
+                        <div class="info-value" style="color: #e74c3c;">2025-06-01 (Expired)</div>
+                    </div>
+                </div>
+
+                <div class="vehicle-actions">
+                    <button class="btn-action btn-edit" onclick="editVehicle('DEF-5678')">
+                        <i class="fas fa-edit me-1"></i>Renew
+                    </button>
+                    <button class="btn-action btn-toggle" onclick="toggleVehicle('DEF-5678')">
+                        <i class="fas fa-toggle-off me-1"></i>Enable
+                    </button>
+                    <button class="btn-action btn-delete" onclick="deleteVehicle('DEF-5678')">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State (hidden by default) -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <i class="fas fa-car"></i>
+            <h4>No vehicles found</h4>
+            <p>Try adjusting your search criteria or add a new vehicle.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function searchVehicles() {
+    const searchInput = document.getElementById('searchInput').value.toLowerCase();
+    const vehicleCards = document.querySelectorAll('.vehicle-card');
+    const emptyState = document.getElementById('emptyState');
+    let visibleCount = 0;
+
+    vehicleCards.forEach(card => {
+        const plate = card.getAttribute('data-plate').toLowerCase();
+        const owner = card.getAttribute('data-owner').toLowerCase();
+        
+        if (plate.includes(searchInput) || owner.includes(searchInput)) {
+            card.style.display = 'block';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Show empty state if no results
+    emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+}
+
+function editVehicle(plateNumber) {
+    // In a real application, this would redirect to an edit form
+    alert(`Editing vehicle: ${plateNumber}`);
+    // window.location.href = `/vehicles/edit/${plateNumber}/`;
+}
+
+function toggleVehicle(plateNumber) {
+    // In a real application, this would send an AJAX request to toggle the vehicle status
+    if (confirm(`Are you sure you want to toggle the status of vehicle ${plateNumber}?`)) {
+        alert(`Vehicle ${plateNumber} status toggled`);
+        // Send AJAX request to toggle status
+    }
+}
+
+function deleteVehicle(plateNumber) {
+    // In a real application, this would send a DELETE request
+    if (confirm(`Are you sure you want to delete vehicle ${plateNumber}? This action cannot be undone.`)) {
+        alert(`Vehicle ${plateNumber} deleted`);
+        // Send DELETE request
+        // Remove the card from DOM
+    }
+}
+
+// Initialize search functionality
+document.getElementById('searchInput').addEventListener('input', searchVehicles);
+</script>
+{% endblock %}

@@ -1,0 +1,578 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - LicenseGuard AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 35px 70px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-title {
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .card-icon {
+        font-size: 1.5rem;
+        color: #3498db;
+        margin-right: 1rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1.5rem;
+        border-radius: 15px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #3498db;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .activity-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        border-bottom-color: transparent;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1rem;
+    }
+
+    .activity-icon.success {
+        background: rgba(46, 204, 113, 0.2);
+        color: #2ecc71;
+    }
+
+    .activity-icon.danger {
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+    }
+
+    .activity-icon.warning {
+        background: rgba(243, 156, 18, 0.2);
+        color: #f39c12;
+    }
+
+    .activity-info {
+        flex: 1;
+    }
+
+    .activity-title {
+        color: #fff;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .activity-subtitle {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.85rem;
+    }
+
+    .activity-time {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.8rem;
+    }
+
+    .control-panel {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(46, 204, 113, 0.2));
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .control-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .control-btn {
+        background: linear-gradient(45deg, #3498db, #2ecc71);
+        border: none;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        cursor: pointer;
+    }
+
+    .control-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(52, 152, 219, 0.4);
+    }
+
+    .control-btn.danger {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        box-shadow: 0 10px 25px rgba(231, 76, 60, 0.3);
+    }
+
+    .control-btn.danger:hover {
+        box-shadow: 0 15px 35px rgba(231, 76, 60, 0.4);
+    }
+
+    .gate-status {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        animation: pulse 2s infinite;
+    }
+
+    .status-closed {
+        background: #e74c3c;
+    }
+
+    .status-open {
+        background: #2ecc71;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    .chart-container {
+        height: 300px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.5);
+        font-style: italic;
+    }
+
+    .top-vehicles-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .vehicle-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .vehicle-item:last-child {
+        border-bottom: none;
+    }
+
+    .vehicle-plate {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #3498db;
+    }
+
+    .vehicle-count {
+        background: rgba(46, 204, 113, 0.2);
+        color: #2ecc71;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">
+                <i class="fas fa-tachometer-alt text-primary me-3"></i>
+                Admin Dashboard
+            </h1>
+            <p class="text-center text-muted mb-5">Complete system overview and control center</p>
+        </div>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="stats-grid">
+        <div class="stat-item">
+            <div class="stat-number">{{ stats.total_vehicles|default:"47" }}</div>
+            <div class="stat-label">Total Vehicles</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ stats.total_users|default:"23" }}</div>
+            <div class="stat-label">Active Users</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ stats.today_access|default:"15" }}</div>
+            <div class="stat-label">Today's Access</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ stats.today_authorized|default:"12" }}</div>
+            <div class="stat-label">Authorized Today</div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <h4 class="text-white mb-3">
+            <i class="fas fa-cogs me-2"></i>
+            System Controls
+        </h4>
+        <div class="gate-status">
+            <div class="status-indicator status-closed" id="gateStatus"></div>
+            <span class="text-white" id="gateStatusText">Gate Status: CLOSED</span>
+        </div>
+        <div class="control-buttons">
+            <button class="control-btn" onclick="controlGate('open')">
+                <i class="fas fa-unlock me-2"></i>Open Gate
+            </button>
+            <button class="control-btn danger" onclick="controlGate('close')">
+                <i class="fas fa-lock me-2"></i>Close Gate
+            </button>
+            <button class="control-btn" onclick="emergencyOpen()">
+                <i class="fas fa-exclamation-triangle me-2"></i>Emergency Open
+            </button>
+            <button class="control-btn" onclick="maintenanceMode()">
+                <i class="fas fa-tools me-2"></i>Maintenance
+            </button>
+        </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Recent Access Logs -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-history card-icon"></i>
+                    Recent Access Logs
+                </h5>
+                <a href="{% url 'vehicle_control:access_logs' %}" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+            <div class="activity-list">
+                {% for log in recent_access_logs|slice:":5" %}
+                <div class="activity-item">
+                    <div class="activity-icon {% if log.authorized %}success{% else %}danger{% endif %}">
+                        <i class="fas {% if log.authorized %}fa-check{% else %}fa-times{% endif %}"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">{{ log.plate_number|default:"ABC-1234" }}</div>
+                        <div class="activity-subtitle">
+                            {% if log.authorized|default:True %}Access Granted{% else %}Access Denied{% endif %}
+                        </div>
+                    </div>
+                    <div class="activity-time">{{ log.timestamp|default:"2 min ago"|timesince }}</div>
+                </div>
+                {% empty %}
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">ABC-1234</div>
+                        <div class="activity-subtitle">Access Granted</div>
+                    </div>
+                    <div class="activity-time">5 min ago</div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon danger">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">XYZ-9876</div>
+                        <div class="activity-subtitle">Access Denied</div>
+                    </div>
+                    <div class="activity-time">12 min ago</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Detections -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-video card-icon"></i>
+                    Recent Detections
+                </h5>
+                <a href="{% url 'vehicle_control:upload_video' %}" class="btn btn-sm btn-outline-success">
+                    Upload Video
+                </a>
+            </div>
+            <div class="activity-list">
+                {% for detection in recent_detections|slice:":5" %}
+                <div class="activity-item">
+                    <div class="activity-icon {% if detection.status == 'completed' %}success{% elif detection.status == 'error' %}danger{% else %}warning{% endif %}">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">{{ detection.plate_text|default:"Processing..." }}</div>
+                        <div class="activity-subtitle">{{ detection.get_status_display|default:"Completed" }}</div>
+                    </div>
+                    <div class="activity-time">{{ detection.upload_timestamp|default:"1 min ago"|timesince }}</div>
+                </div>
+                {% empty %}
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">ABC-1234</div>
+                        <div class="activity-subtitle">Completed</div>
+                    </div>
+                    <div class="activity-time">3 min ago</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Gate Control Logs -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-door-open card-icon"></i>
+                    Gate Activity
+                </h5>
+            </div>
+            <div class="activity-list">
+                {% for gate_log in recent_gate_logs|slice:":5" %}
+                <div class="activity-item">
+                    <div class="activity-icon {% if gate_log.operation == 'open' %}success{% elif gate_log.operation == 'close' %}danger{% else %}warning{% endif %}">
+                        <i class="fas {% if gate_log.operation == 'open' %}fa-unlock{% elif gate_log.operation == 'close' %}fa-lock{% else %}fa-cog{% endif %}"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">{{ gate_log.get_operation_display|default:"Gate Opened" }}</div>
+                        <div class="activity-subtitle">{{ gate_log.triggered_by.username|default:"System" }}</div>
+                    </div>
+                    <div class="activity-time">{{ gate_log.timestamp|default:"30 sec ago"|timesince }}</div>
+                </div>
+                {% empty %}
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-unlock"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">Gate Opened</div>
+                        <div class="activity-subtitle">Auto Detection</div>
+                    </div>
+                    <div class="activity-time">2 min ago</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Top Vehicles -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-trophy card-icon"></i>
+                    Most Active Vehicles
+                </h5>
+                <a href="{% url 'vehicle_control:authorized_vehicles' %}" class="btn btn-sm btn-outline-primary">
+                    Manage
+                </a>
+            </div>
+            <div class="top-vehicles-list">
+                {% for vehicle in top_vehicles|slice:":10" %}
+                <div class="vehicle-item">
+                    <div class="vehicle-plate">{{ vehicle.plate_number|default:"ABC-1234" }}</div>
+                    <div class="vehicle-count">{{ vehicle.access_count|default:"23" }} times</div>
+                </div>
+                {% empty %}
+                <div class="vehicle-item">
+                    <div class="vehicle-plate">ABC-1234</div>
+                    <div class="vehicle-count">23 times</div>
+                </div>
+                <div class="vehicle-item">
+                    <div class="vehicle-plate">XYZ-9876</div>
+                    <div class="vehicle-count">18 times</div>
+                </div>
+                <div class="vehicle-item">
+                    <div class="vehicle-plate">DEF-5678</div>
+                    <div class="vehicle-count">12 times</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- System Analytics -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-line card-icon"></i>
+                    Weekly Activity
+                </h5>
+                <a href="{% url 'dashboard:analytics' %}" class="btn btn-sm btn-outline-info">
+                    Detailed Analytics
+                </a>
+            </div>
+            <div class="chart-container">
+                <p>Interactive chart will be displayed here</p>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-server card-icon"></i>
+                    System Status
+                </h5>
+                <a href="{% url 'dashboard:settings' %}" class="btn btn-sm btn-outline-secondary">
+                    Settings
+                </a>
+            </div>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">Camera System</div>
+                        <div class="activity-subtitle">Online</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">Gate Controller</div>
+                        <div class="activity-subtitle">Connected</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">AI Detection</div>
+                        <div class="activity-subtitle">Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function controlGate(action) {
+    const statusIndicator = document.getElementById('gateStatus');
+    const statusText = document.getElementById('gateStatusText');
+    
+    if (action === 'open') {
+        statusIndicator.className = 'status-indicator status-open';
+        statusText.textContent = 'Gate Status: OPEN';
+        
+        // Auto close after 10 seconds
+        setTimeout(() => {
+            statusIndicator.className = 'status-indicator status-closed';
+            statusText.textContent = 'Gate Status: CLOSED';
+        }, 10000);
+    } else if (action === 'close') {
+        statusIndicator.className = 'status-indicator status-closed';
+        statusText.textContent = 'Gate Status: CLOSED';
+    }
+    
+    // In a real application, this would send an AJAX request to control the actual gate
+    console.log(`Gate action: ${action}`);
+}
+
+function emergencyOpen() {
+    if (confirm('Are you sure you want to trigger emergency gate opening?')) {
+        controlGate('open');
+        alert('Emergency gate opening activated!');
+    }
+}
+
+function maintenanceMode() {
+    if (confirm('Enable maintenance mode? This will disable automatic gate operations.')) {
+        alert('Maintenance mode enabled. Gate operations are now manual only.');
+    }
+}
+
+// Auto-refresh dashboard every 30 seconds
+setInterval(() => {
+    // In a real application, this would fetch updated data
+    console.log('Refreshing dashboard data...');
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ username }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="text-white fw-bold">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </h2>
+                <p class="text-white-50">Welcome back, {{ username }}!</p>
+            </div>
+            <div>
+                <span class="badge bg-light text-dark px-3 py-2 fs-6">
+                    <i class="fas fa-car me-1"></i>Total Vehicles: {{ plates|length }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Upload Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-4">
+                <h4 class="card-title text-primary fw-bold mb-4">
+                    <i class="fas fa-video me-2"></i>Upload Video for License Plate Detection
+                </h4>
+                
+                <form method="post" enctype="multipart/form-data" id="videoUploadForm">
+                    {% csrf_token %}
+                    
+                    <div class="upload-area text-center p-5 mb-4" onclick="document.getElementById('videoFile').click();">
+                        <i class="fas fa-cloud-upload-alt text-primary" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3 text-primary fw-bold">คลิกเพื่ออัปโหลดวิดีโอ</h5>
+                        <p class="text-muted mb-0">รองรับไฟล์ MP4, AVI, MOV</p>
+                        <input type="file" id="videoFile" name="video" accept="video/*" style="display: none;" onchange="handleFileSelect(this)">
+                    </div>
+                    
+                    <div id="videoPreview" style="display: none;" class="text-center mb-4">
+                        <video id="previewVideo" class="video-preview" controls style="max-height: 300px;"></video>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary me-3">
+                                <i class="fas fa-cog me-2"></i>เริ่มประมวลผล
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelUpload()">
+                                <i class="fas fa-times me-2"></i>ยกเลิก
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="processingArea" style="display: none;" class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">กำลังประมวลผล...</span>
+                        </div>
+                        <h5 class="text-primary">กำลังประมวลผลวิดีโอ...</h5>
+                        <p class="text-muted">กรุณารอสักครู่ ระบบกำลังตรวจจับป้ายทะเบียนในวิดีโอ</p>
+                        <div class="progress mt-3" style="height: 25px;">
+                            <div class="progress-bar" role="progressbar" style="width: 0%" id="progressBar"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manual Entry Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-4">
+                <h4 class="card-title text-success fw-bold mb-4">
+                    <i class="fas fa-plus-circle me-2"></i>เพิ่มข้อมูลป้ายทะเบียนด้วยตนเอง
+                </h4>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="plate_text" class="form-label fw-500">
+                                <i class="fas fa-id-card me-2"></i>หมายเลขป้ายทะเบียน
+                            </label>
+                            <input type="text" class="form-control" id="plate_text" name="plate_text" required
+                                   placeholder="เช่น: กข 1234">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="province" class="form-label fw-500">
+                                <i class="fas fa-map-marker-alt me-2"></i>จังหวัด
+                            </label>
+                            <input type="text" class="form-control" id="province" name="province"
+                                   placeholder="เช่น: กรุงเทพมหานคร">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="brand" class="form-label fw-500">
+                                <i class="fas fa-car me-2"></i>ยี่ห้อรถ
+                            </label>
+                            <input type="text" class="form-control" id="brand" name="brand"
+                                   placeholder="เช่น: Toyota">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="model" class="form-label fw-500">
+                                <i class="fas fa-cogs me-2"></i>รุ่นรถ
+                            </label>
+                            <input type="text" class="form-control" id="model" name="model"
+                                   placeholder="เช่น: Camry">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="category" class="form-label fw-500">
+                                <i class="fas fa-tags me-2"></i>ประเภทรถ
+                            </label>
+                            <select class="form-control" id="category" name="category">
+                                <option value="">เลือกประเภทรถ</option>
+                                <option value="รถเก๋ง">รถเก๋ง</option>
+                                <option value="รถกระบะ">รถกระบะ</option>
+                                <option value="รถ SUV">รถ SUV</option>
+                                <option value="รถมอเตอร์ไซค์">รถมอเตอร์ไซค์</option>
+                                <option value="รถบรรทุก">รถบรรทุก</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>บันทึกข้อมูล
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vehicle Logs Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-4">
+                <h4 class="card-title text-info fw-bold mb-4">
+                    <i class="fas fa-list me-2"></i>ประวัติการตรวจจับ
+                </h4>
+                
+                {% if plates %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-id-card me-1"></i>ป้ายทะเบียน</th>
+                                <th><i class="fas fa-car me-1"></i>ยี่ห้อ/รุ่น</th>
+                                <th><i class="fas fa-map-marker-alt me-1"></i>จังหวัด</th>
+                                <th><i class="fas fa-tags me-1"></i>ประเภท</th>
+                                <th><i class="fas fa-info-circle me-1"></i>สถานะ</th>
+                                <th><i class="fas fa-clock me-1"></i>เวลา</th>
+                                <th><i class="fas fa-image me-1"></i>รูปภาพ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plate in plates %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ plate.plate_text|default:"ไม่ระบุ" }}</td>
+                                <td>{{ plate.vendor|default:"ไม่ระบุ" }} {{ plate.model|default:"" }}</td>
+                                <td>{{ plate.province|default:"ไม่ระบุ" }}</td>
+                                <td>{{ plate.category|default:"ไม่ระบุ" }}</td>
+                                <td>
+                                    {% if plate.status == 'entry' %}
+                                        <span class="status-badge bg-primary text-white">ป้อนด้วยตนเอง</span>
+                                    {% elif plate.status == 'known' %}
+                                        <span class="status-badge bg-success text-white">รู้จัก</span>
+                                    {% else %}
+                                        <span class="status-badge bg-warning text-dark">ไม่รู้จัก</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ plate.timestamp|date:"d/m/Y" }}<br>
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ plate.timestamp|time:"H:i:s" }}
+                                </td>
+                                <td>
+                                    {% if plate.image_filename %}
+                                        <a href="/media/plates/{{ plate.image_filename }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>ดูรูป
+                                        </a>
+                                    {% elif plate.video_filename %}
+                                        <a href="/media/videos/{{ plate.video_filename }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-play me-1"></i>ดูวิดีโอ
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">ไม่มีไฟล์</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="mt-3 text-muted">ยังไม่มีข้อมูลป้ายทะเบียน</h5>
+                    <p class="text-muted">เริ่มต้นด้วยการอัปโหลดวิดีโอหรือเพิ่มข้อมูลด้วยตนเอง</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function handleFileSelect(input) {
+    const file = input.files[0];
+    if (file) {
+        const video = document.getElementById('previewVideo');
+        const preview = document.getElementById('videoPreview');
+        
+        video.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+        
+        // Hide upload area
+        document.querySelector('.upload-area').style.display = 'none';
+    }
+}
+
+function cancelUpload() {
+    document.getElementById('videoFile').value = '';
+    document.getElementById('videoPreview').style.display = 'none';
+    document.querySelector('.upload-area').style.display = 'block';
+    
+    const video = document.getElementById('previewVideo');
+    URL.revokeObjectURL(video.src);
+}
+
+// Handle form submission
+document.getElementById('videoUploadForm').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('videoFile');
+    if (!fileInput.files[0]) {
+        e.preventDefault();
+        alert('กรุณาเลือกไฟล์วิดีโอ');
+        return;
+    }
+    
+    // Show processing area
+    document.getElementById('videoPreview').style.display = 'none';
+    document.getElementById('processingArea').style.display = 'block';
+    
+    // Simulate progress (in real implementation, this would come from server)
+    let progress = 0;
+    const progressBar = document.getElementById('progressBar');
+    const interval = setInterval(function() {
+        progress += Math.random() * 10;
+        if (progress > 95) progress = 95;
+        progressBar.style.width = progress + '%';
+        
+        if (progress >= 95) {
+            clearInterval(interval);
+        }
+    }, 1000);
+});
+
+// Auto-refresh page every 30 seconds to show new detections
+setInterval(function() {
+    // Only refresh if not processing
+    if (document.getElementById('processingArea').style.display === 'none') {
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

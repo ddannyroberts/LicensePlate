@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings - LicenseGuard AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 1rem 0;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .settings-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .form-control-dark {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        border-radius: 8px;
+    }
+
+    .form-control-dark:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">
+                <i class="fas fa-cog text-primary me-3"></i>
+                System Settings
+            </h1>
+            <p class="text-center text-muted mb-5">Configure system parameters and preferences</p>
+        </div>
+    </div>
+
+    <div class="settings-container">
+        <div class="settings-section">
+            <h5 class="text-white mb-3">Detection Settings</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="confidence" class="form-label text-white">Confidence Threshold</label>
+                    <input type="range" class="form-range" id="confidence" min="0" max="100" value="85">
+                    <small class="text-muted">Current: 85%</small>
+                </div>
+                <div class="col-md-6">
+                    <label for="autoClose" class="form-label text-white">Auto Close Gate (seconds)</label>
+                    <input type="number" class="form-control form-control-dark" id="autoClose" value="10">
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h5 class="text-white mb-3">Notification Settings</h5>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="emailNotifications" checked>
+                <label class="form-check-label text-white" for="emailNotifications">
+                    Email notifications for unauthorized access
+                </label>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button class="btn btn-primary btn-lg">Save Settings</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

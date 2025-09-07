@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Access Control System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .stat-card {
+            border-radius: 15px;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .recent-log {
+            border-radius: 10px;
+            margin-bottom: 10px;
+            padding: 15px;
+        }
+        .log-authorized {
+            border-left: 4px solid #28a745;
+            background-color: #f8fff9;
+        }
+        .log-denied {
+            border-left: 4px solid #dc3545;
+            background-color: #fff8f8;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                Access Control System
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="{{ url_for('admin_dashboard') }}">
+                    <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('manage_authorized_vehicles') }}">
+                    <i class="fas fa-car me-1"></i>Authorized Vehicles
+                </a>
+                <a class="nav-link" href="{{ url_for('view_access_logs') }}">
+                    <i class="fas fa-list me-1"></i>Access Logs
+                </a>
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="text-primary">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    System Dashboard
+                </h2>
+                <p class="text-muted">Advanced License Plate Recognition & Access Control</p>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-car fa-2x mb-2"></i>
+                        <h4>{{ authorized_vehicles|length }}</h4>
+                        <small>Authorized Vehicles</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-history fa-2x mb-2"></i>
+                        <h4>{{ access_logs|length }}</h4>
+                        <small>Recent Access Attempts</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h4>{{ access_logs|selectattr('authorized')|list|length }}</h4>
+                        <small>Authorized Today</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <h4>{{ access_logs|rejectattr('authorized')|list|length }}</h4>
+                        <small>Access Denied</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Gate Control -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>Gate Control Test
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('test_gate_control') }}">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input type="text" class="form-control" name="test_plate" 
+                                           placeholder="Enter license plate to test" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-warning w-100">
+                                        <i class="fas fa-door-open me-1"></i>Test Access
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Test access control with a license plate number
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-door-open me-2"></i>Gate Status
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <i class="fas fa-door-closed fa-3x text-secondary mb-2"></i>
+                        <h5>System Ready</h5>
+                        <small class="text-muted">Waiting for vehicle detection</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Access Attempts -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Recent Access Attempts
+                        </h5>
+                    </div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        {% if access_logs %}
+                            {% for log in access_logs[:10] %}
+                                <div class="recent-log {% if log.authorized %}log-authorized{% else %}log-denied{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge bg-info">{{ log.plate_number }}</span>
+                                            {% if log.authorized %}
+                                                <span class="badge bg-success ms-2">
+                                                    <i class="fas fa-check me-1"></i>Authorized
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger ms-2">
+                                                    <i class="fas fa-times me-1"></i>Denied
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ log.timestamp.strftime('%m-%d %H:%M') }}
+                                        </small>
+                                    </div>
+                                    {% if log.owner_info %}
+                                        {% set owner_data = log.owner_info|fromjson %}
+                                        <small class="text-muted">
+                                            Owner: {{ owner_data.owner }} | {{ owner_data.vehicle_type }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('view_access_logs') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-list me-1"></i>View All Logs
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-history fa-3x mb-3"></i>
+                                <p>No access attempts yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Authorized Vehicles Summary -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-car me-2"></i>
+                            Authorized Vehicles
+                        </h5>
+                    </div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        {% if authorized_vehicles %}
+                            {% for vehicle in authorized_vehicles[:8] %}
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                    <div>
+                                        <span class="badge bg-info">{{ vehicle.plate_number }}</span>
+                                        <br><small class="text-muted">{{ vehicle.owner_name }}</small>
+                                    </div>
+                                    <small class="text-muted">{{ vehicle.vehicle_type }}</small>
+                                </div>
+                            {% endfor %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('manage_authorized_vehicles') }}" class="btn btn-outline-success">
+                                    <i class="fas fa-cog me-1"></i>Manage
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-car fa-3x mb-3"></i>
+                                <p>No authorized vehicles</p>
+                                <a href="{{ url_for('manage_authorized_vehicles') }}" class="btn btn-success">
+                                    <i class="fas fa-plus me-1"></i>Add First Vehicle
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Detection Logs -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-video me-2"></i>
+                            Video Processing History
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if plates %}
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>License Plate</th>
+                                            <th>Vehicle Type</th>
+                                            <th>Status</th>
+                                            <th>Image</th>
+                                            <th>Video</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in plates[:20] %}
+                                        <tr>
+                                            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td><span class="badge bg-info">{{ log.plate_text }}</span></td>
+                                            <td>{{ log.vendor or 'Unknown' }}</td>
+                                            <td>
+                                                {% if log.status == 'authorized' %}
+                                                    <span class="badge bg-success">Authorized</span>
+                                                {% elif log.status == 'unauthorized' %}
+                                                    <span class="badge bg-danger">Unauthorized</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ log.status|title }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if log.image_filename %}
+                                                    <img src="{{ url_for('static', filename='uploads/' + log.image_filename) }}" 
+                                                         alt="Plate" width="80" class="rounded">
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if log.video_filename %}
+                                                    <i class="fas fa-video text-primary"></i>
+                                                    {{ log.video_filename[:20] }}...
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-video fa-3x mb-3"></i>
+                                <p>No video processing history yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
