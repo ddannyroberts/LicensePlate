@@ -1,0 +1,29 @@
+# Django License Plate Recognition System Requirements
+Django>=4.2.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.0.0
+django-crispy-forms>=2.0
+crispy-bootstrap5>=0.7
+
+# Computer Vision Dependencies (same as Flask version)
+opencv-python>=4.8.0
+easyocr>=1.7.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# Database
+psycopg2-binary>=2.9.0  # PostgreSQL support
+# Note: Can also use SQLite (built-in)
+
+# Utilities
+requests>=2.31.0
+python-decouple>=3.8
+whitenoise>=6.5.0  # Static files serving
+
+# Development
+django-debug-toolbar>=4.1.0
+pytest-django>=4.5.0
+factory-boy>=3.2.0
+
+# Arduino Integration (same as Flask)
+pyserial>=3.5

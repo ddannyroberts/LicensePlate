@@ -1,0 +1,1 @@
+# Django License Plate System - Main Package

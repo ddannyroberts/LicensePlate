@@ -163,43 +163,146 @@
             </div>
         </div>
 
-        <!-- Video Upload Section -->
+        <!-- Detection Methods Tabs -->
         <div class="row mb-5">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body p-4">
                         <h4 class="card-title text-primary fw-bold mb-4">
-                            <i class="fas fa-video me-2"></i>Upload Video for License Plate Detection
+                            <i class="fas fa-video me-2"></i>License Plate Detection Options
                         </h4>
                         
-                        <form method="post" enctype="multipart/form-data" id="videoUploadForm">
-                            <div class="upload-area text-center p-5 mb-4" onclick="document.getElementById('videoFile').click();">
-                                <i class="fas fa-cloud-upload-alt text-primary" style="font-size: 4rem;"></i>
-                                <h5 class="mt-3 text-primary fw-bold">Click to Upload Video</h5>
-                                <p class="text-muted mb-0">Supports MP4, AVI, MOV formats</p>
-                                <input type="file" id="videoFile" name="video" accept="video/*" style="display: none;" onchange="handleFileSelect(this)">
+                        <!-- Navigation Tabs -->
+                        <ul class="nav nav-pills mb-4" id="detectionTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="upload-tab" data-bs-toggle="pill" data-bs-target="#upload" type="button" role="tab">
+                                    <i class="fas fa-cloud-upload-alt me-2"></i>Upload Video
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="stream-tab" data-bs-toggle="pill" data-bs-target="#stream" type="button" role="tab">
+                                    <i class="fas fa-broadcast-tower me-2"></i>Stream Video
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="live-tab" data-bs-toggle="pill" data-bs-target="#live" type="button" role="tab">
+                                    <i class="fas fa-camera me-2"></i>Live Camera
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="detectionTabsContent">
+                            <!-- Upload Video Tab -->
+                            <div class="tab-pane fade show active" id="upload" role="tabpanel">
+                                <form method="post" enctype="multipart/form-data" id="videoUploadForm">
+                                    <div class="upload-area text-center p-5 mb-4" onclick="document.getElementById('videoFile').click();">
+                                        <i class="fas fa-cloud-upload-alt text-primary" style="font-size: 4rem;"></i>
+                                        <h5 class="mt-3 text-primary fw-bold">Click to Upload Video</h5>
+                                        <p class="text-muted mb-0">Supports MP4, AVI, MOV formats</p>
+                                        <input type="file" id="videoFile" name="video" accept="video/*" style="display: none;" onchange="handleFileSelect(this)">
+                                    </div>
+                                    
+                                    <div id="videoPreview" style="display: none;" class="text-center mb-4">
+                                        <video id="previewVideo" class="rounded shadow" controls style="max-height: 300px; max-width: 100%;"></video>
+                                        <div class="mt-3">
+                                            <button type="submit" class="btn btn-primary me-3">
+                                                <i class="fas fa-cog me-2"></i>Start Processing
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="cancelUpload()">
+                                                <i class="fas fa-times me-2"></i>Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="processingArea" style="display: none;" class="text-center">
+                                        <div class="spinner-border text-primary mb-3" role="status">
+                                            <span class="visually-hidden">Processing...</span>
+                                        </div>
+                                        <h5 class="text-primary">Processing Video...</h5>
+                                        <p class="text-muted">Please wait while the system detects license plates in your video</p>
+                                    </div>
+                                </form>
                             </div>
                             
-                            <div id="videoPreview" style="display: none;" class="text-center mb-4">
-                                <video id="previewVideo" class="rounded shadow" controls style="max-height: 300px; max-width: 100%;"></video>
-                                <div class="mt-3">
-                                    <button type="submit" class="btn btn-primary me-3">
-                                        <i class="fas fa-cog me-2"></i>Start Processing
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" onclick="cancelUpload()">
-                                        <i class="fas fa-times me-2"></i>Cancel
-                                    </button>
+                            <!-- Stream Video Tab -->
+                            <div class="tab-pane fade" id="stream" role="tabpanel">
+                                <div class="text-center">
+                                    <div class="mb-4">
+                                        <h5 class="text-primary fw-bold">Stream Video URL</h5>
+                                        <p class="text-muted">Enter a video stream URL to process in real-time</p>
+                                    </div>
+                                    
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-8">
+                                            <div class="input-group mb-3">
+                                                <input type="url" id="streamUrl" class="form-control" placeholder="https://example.com/stream.m3u8 or rtmp://...">
+                                                <button class="btn btn-primary" onclick="startStream()">
+                                                    <i class="fas fa-play me-2"></i>Start Stream
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="streamArea" style="display: none;">
+                                        <video id="streamVideo" class="rounded shadow mb-3" controls style="max-height: 400px; max-width: 100%;"></video>
+                                        <div class="mb-3">
+                                            <button class="btn btn-success me-2" onclick="toggleStreamDetection()">
+                                                <i class="fas fa-eye me-2"></i>Enable Detection
+                                            </button>
+                                            <button class="btn btn-danger" onclick="stopStream()">
+                                                <i class="fas fa-stop me-2"></i>Stop Stream
+                                            </button>
+                                        </div>
+                                        <div id="streamResults" class="text-start">
+                                            <h6 class="text-primary">Detection Results:</h6>
+                                            <div id="streamDetections" class="alert alert-light">
+                                                No detections yet...
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div id="processingArea" style="display: none;" class="text-center">
-                                <div class="spinner-border text-primary mb-3" role="status">
-                                    <span class="visually-hidden">Processing...</span>
+                            <!-- Live Camera Tab -->
+                            <div class="tab-pane fade" id="live" role="tabpanel">
+                                <div class="text-center">
+                                    <div class="mb-4">
+                                        <h5 class="text-primary fw-bold">Live Camera Detection</h5>
+                                        <p class="text-muted">Use your device camera for real-time license plate detection</p>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <button class="btn btn-primary me-2" onclick="startCamera()">
+                                            <i class="fas fa-camera me-2"></i>Start Camera
+                                        </button>
+                                        <button class="btn btn-danger me-2" onclick="stopCamera()" style="display: none;" id="stopCameraBtn">
+                                            <i class="fas fa-stop me-2"></i>Stop Camera
+                                        </button>
+                                        <button class="btn btn-success" onclick="toggleLiveDetection()" style="display: none;" id="toggleDetectionBtn">
+                                            <i class="fas fa-eye me-2"></i>Enable Detection
+                                        </button>
+                                    </div>
+                                    
+                                    <div id="cameraArea" style="display: none;">
+                                        <video id="cameraVideo" class="rounded shadow mb-3" autoplay playsinline style="max-height: 400px; max-width: 100%;"></video>
+                                        <canvas id="cameraCanvas" style="display: none;"></canvas>
+                                        
+                                        <div id="liveResults" class="text-start mt-3">
+                                            <h6 class="text-primary">Live Detection Results:</h6>
+                                            <div id="liveDetections" class="alert alert-light">
+                                                Camera ready - enable detection to start...
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="cameraError" style="display: none;" class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Camera access denied or not available. Please check your browser permissions.
+                                    </div>
                                 </div>
-                                <h5 class="text-primary">Processing Video...</h5>
-                                <p class="text-muted">Please wait while the system detects license plates in your video</p>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -362,6 +465,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Global variables for live detection
+        let cameraStream = null;
+        let streamDetectionInterval = null;
+        let liveDetectionInterval = null;
+        let streamDetectionActive = false;
+        let liveDetectionActive = false;
+        
+        // Original upload functions
         function handleFileSelect(input) {
             const file = input.files[0];
             if (file) {
@@ -398,6 +509,274 @@
             document.getElementById('videoPreview').style.display = 'none';
             document.getElementById('processingArea').style.display = 'block';
         });
+        
+        // Stream Video Functions
+        function startStream() {
+            const streamUrl = document.getElementById('streamUrl').value;
+            if (!streamUrl) {
+                alert('Please enter a stream URL');
+                return;
+            }
+            
+            const streamVideo = document.getElementById('streamVideo');
+            const streamArea = document.getElementById('streamArea');
+            
+            streamVideo.src = streamUrl;
+            streamArea.style.display = 'block';
+            
+            streamVideo.onerror = function() {
+                alert('Unable to load stream. Please check the URL and try again.');
+                stopStream();
+            };
+        }
+        
+        function stopStream() {
+            const streamVideo = document.getElementById('streamVideo');
+            const streamArea = document.getElementById('streamArea');
+            
+            streamVideo.src = '';
+            streamArea.style.display = 'none';
+            
+            if (streamDetectionInterval) {
+                clearInterval(streamDetectionInterval);
+                streamDetectionInterval = null;
+            }
+            streamDetectionActive = false;
+        }
+        
+        function toggleStreamDetection() {
+            const button = event.target;
+            
+            if (!streamDetectionActive) {
+                streamDetectionActive = true;
+                button.innerHTML = '<i class="fas fa-eye-slash me-2"></i>Disable Detection';
+                button.className = 'btn btn-warning me-2';
+                
+                // Start detection interval
+                streamDetectionInterval = setInterval(() => {
+                    detectFromStream();
+                }, 2000); // Check every 2 seconds
+                
+            } else {
+                streamDetectionActive = false;
+                button.innerHTML = '<i class="fas fa-eye me-2"></i>Enable Detection';
+                button.className = 'btn btn-success me-2';
+                
+                if (streamDetectionInterval) {
+                    clearInterval(streamDetectionInterval);
+                    streamDetectionInterval = null;
+                }
+            }
+        }
+        
+        function detectFromStream() {
+            const video = document.getElementById('streamVideo');
+            const detectionsDiv = document.getElementById('streamDetections');
+            
+            // Create canvas to capture frame
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            
+            if (video.readyState >= 2) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Convert to blob and send to server
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const formData = new FormData();
+                        formData.append('frame', blob, 'frame.jpg');
+                        
+                        const response = await fetch('/api/detect_frame', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.plates && result.plates.length > 0) {
+                            detectionsDiv.innerHTML = `
+                                <div class="alert alert-success">
+                                    <strong>Detected:</strong> ${result.plates.map(p => p.text).join(', ')}
+                                    <br><small>Time: ${new Date().toLocaleTimeString()}</small>
+                                </div>
+                            `;
+                        } else {
+                            detectionsDiv.innerHTML = `
+                                <div class="alert alert-light">
+                                    Scanning... ${new Date().toLocaleTimeString()}
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Detection error:', error);
+                    }
+                }, 'image/jpeg');
+            }
+        }
+        
+        // Live Camera Functions
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'environment' // Use back camera if available
+                    }
+                });
+                
+                const cameraVideo = document.getElementById('cameraVideo');
+                const cameraArea = document.getElementById('cameraArea');
+                const stopBtn = document.getElementById('stopCameraBtn');
+                const toggleBtn = document.getElementById('toggleDetectionBtn');
+                
+                cameraVideo.srcObject = cameraStream;
+                cameraArea.style.display = 'block';
+                stopBtn.style.display = 'inline-block';
+                toggleBtn.style.display = 'inline-block';
+                
+                // Hide start button
+                event.target.style.display = 'none';
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                document.getElementById('cameraError').style.display = 'block';
+            }
+        }
+        
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            
+            const cameraVideo = document.getElementById('cameraVideo');
+            const cameraArea = document.getElementById('cameraArea');
+            const stopBtn = document.getElementById('stopCameraBtn');
+            const toggleBtn = document.getElementById('toggleDetectionBtn');
+            const startBtn = document.querySelector('button[onclick="startCamera()"]');
+            
+            cameraVideo.srcObject = null;
+            cameraArea.style.display = 'none';
+            stopBtn.style.display = 'none';
+            toggleBtn.style.display = 'none';
+            startBtn.style.display = 'inline-block';
+            
+            // Stop detection
+            if (liveDetectionInterval) {
+                clearInterval(liveDetectionInterval);
+                liveDetectionInterval = null;
+            }
+            liveDetectionActive = false;
+        }
+        
+        function toggleLiveDetection() {
+            const button = event.target;
+            
+            if (!liveDetectionActive) {
+                liveDetectionActive = true;
+                button.innerHTML = '<i class="fas fa-eye-slash me-2"></i>Disable Detection';
+                button.className = 'btn btn-warning';
+                
+                // Start detection interval
+                liveDetectionInterval = setInterval(() => {
+                    detectFromCamera();
+                }, 1000); // Check every 1 second for live
+                
+            } else {
+                liveDetectionActive = false;
+                button.innerHTML = '<i class="fas fa-eye me-2"></i>Enable Detection';
+                button.className = 'btn btn-success';
+                
+                if (liveDetectionInterval) {
+                    clearInterval(liveDetectionInterval);
+                    liveDetectionInterval = null;
+                }
+            }
+        }
+        
+        function detectFromCamera() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            const detectionsDiv = document.getElementById('liveDetections');
+            
+            if (!video.videoWidth || !video.videoHeight) return;
+            
+            // Setup canvas
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            // Convert to blob and send to server
+            canvas.toBlob(async (blob) => {
+                try {
+                    const formData = new FormData();
+                    formData.append('frame', blob, 'frame.jpg');
+                    
+                    const response = await fetch('/api/detect_frame', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.plates && result.plates.length > 0) {
+                        detectionsDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <strong>🎯 DETECTED:</strong> ${result.plates.map(p => p.text).join(', ')}
+                                <br><small>📸 ${new Date().toLocaleTimeString()}</small>
+                                <br><small>🎯 Confidence: ${result.plates.map(p => p.confidence || 'Unknown').join(', ')}</small>
+                            </div>
+                        `;
+                        
+                        // Auto-save detected plate
+                        if (result.plates[0].text) {
+                            saveDetectedPlate(result.plates[0]);
+                        }
+                    } else {
+                        detectionsDiv.innerHTML = `
+                            <div class="alert alert-light">
+                                🔍 Live scanning... ${new Date().toLocaleTimeString()}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Live detection error:', error);
+                    detectionsDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            ❌ Detection error - check console
+                        </div>
+                    `;
+                }
+            }, 'image/jpeg', 0.8);
+        }
+        
+        // Auto-save detected plates
+        async function saveDetectedPlate(plateData) {
+            try {
+                const response = await fetch('/api/save_detected_plate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        plate_text: plateData.text,
+                        confidence: plateData.confidence,
+                        source: 'live_camera',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Plate saved automatically:', plateData.text);
+                }
+            } catch (error) {
+                console.error('Error saving plate:', error);
+            }
+        }
     </script>
 </body>
 </html>

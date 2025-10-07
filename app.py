@@ -10,6 +10,8 @@ import easyocr
 from datetime import datetime
 import json
 from functools import wraps
+import requests
+import time
 
 # Login required decorator
 def login_required(f):
@@ -29,6 +31,25 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 app.config['VIDEO_FOLDER'] = 'static/videos/'
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB max file size
+
+# Arduino Mega 2560 Configuration
+ARDUINO_COMMUNICATION = "SERIAL"  # Options: "ETHERNET", "SERIAL"
+
+# Ethernet settings (if using Ethernet Shield)
+ARDUINO_IP = "192.168.1.177"  # Arduino IP address
+ARDUINO_PORT = 80
+
+# Serial settings (if using USB/Serial)
+ARDUINO_SERIAL_PORT = "/dev/ttyUSB0"  # Linux/Mac: /dev/ttyUSB0, Windows: COM3
+ARDUINO_BAUD_RATE = 115200
+
+# Try to import serial for Serial communication
+try:
+    import serial
+    SERIAL_AVAILABLE = True
+except ImportError:
+    SERIAL_AVAILABLE = False
+    print("⚠️  pyserial not installed. Install with: pip install pyserial")
 
 db = SQLAlchemy(app)
 
@@ -461,15 +482,24 @@ class AccessControlSystem:
                 
                 # Open gate
                 threading.Thread(target=self.control_gate, args=("OPEN",)).start()
-                
+
+                # Send command to Arduino
+                owner_name = owner_info.get('owner', 'Unknown') if owner_info else 'Unknown'
+                arduino_result = open_gate_arduino(plate_text, owner_name, True)
+
                 print(f"✅ ACCESS GRANTED")
                 print(f"   Plate: {plate_text}")
-                print(f"   Owner: {owner_info.get('owner', 'Unknown') if owner_info else 'Unknown'}")
+                print(f"   Owner: {owner_name}")
+                print(f"   Arduino: {arduino_result.get('message', 'Command sent')}")
                 print(f"   Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             else:
+                # Send denial to Arduino (optional - for logging)
+                arduino_result = open_gate_arduino(plate_text, "Unknown", False)
+
                 print(f"❌ ACCESS DENIED")
                 print(f"   Plate: {plate_text}")
                 print(f"   Reason: Not authorized")
+                print(f"   Arduino: {arduino_result.get('message', 'Denial logged')}")
                 print(f"   Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
             # Log the attempt
@@ -480,6 +510,147 @@ class AccessControlSystem:
             print(f"   Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         return result
+
+# Arduino Mega 2560 Communication Functions
+def send_arduino_serial_command(command):
+    """Send command to Arduino via Serial communication"""
+    if not SERIAL_AVAILABLE:
+        return {"error": "pyserial not installed"}
+
+    try:
+        ser = serial.Serial(ARDUINO_SERIAL_PORT, ARDUINO_BAUD_RATE, timeout=2)
+        time.sleep(0.1)  # Give Arduino time to initialize
+
+        # Send command
+        ser.write(f"{command}\n".encode())
+        ser.flush()
+
+        # Read response
+        response = ser.readline().decode().strip()
+        ser.close()
+
+        # Parse JSON response if possible
+        try:
+            return json.loads(response.split('📤 ')[-1])  # Remove emoji prefix
+        except (json.JSONDecodeError, IndexError):
+            return {"message": response, "raw_response": response}
+
+    except serial.SerialException as e:
+        return {"error": f"Serial communication error: {e}"}
+    except Exception as e:
+        return {"error": f"Arduino serial error: {e}"}
+
+def send_arduino_ethernet_command(endpoint, data=None):
+    """Send command to Arduino via Ethernet"""
+    try:
+        url = f"http://{ARDUINO_IP}:{ARDUINO_PORT}/api/{endpoint}"
+        if data:
+            response = requests.post(url, json=data, timeout=5)
+        else:
+            response = requests.get(url, timeout=5)
+
+        if response.status_code == 200:
+            try:
+                return response.json()
+            except json.JSONDecodeError:
+                return {"message": response.text}
+        else:
+            return {"error": f"Arduino returned status {response.status_code}"}
+    except requests.exceptions.ConnectionError as e:
+        return {"error": f"Cannot connect to Arduino: {e}"}
+    except Exception as e:
+        return {"error": f"Arduino ethernet error: {e}"}
+
+def get_available_serial_ports():
+    """Get list of available serial ports"""
+    if not SERIAL_AVAILABLE:
+        return []
+
+    try:
+        import serial.tools.list_ports
+        ports = serial.tools.list_ports.comports()
+        return [port.device for port in ports]
+    except ImportError:
+        return []
+
+def test_arduino_connection():
+    """Test connection to Arduino"""
+    if ARDUINO_COMMUNICATION == "SERIAL":
+        if not SERIAL_AVAILABLE:
+            return {"error": "pyserial not installed", "status": "failed"}
+
+        try:
+            # Test if the port exists
+            available_ports = get_available_serial_ports()
+            if ARDUINO_SERIAL_PORT not in available_ports:
+                return {
+                    "error": f"Port {ARDUINO_SERIAL_PORT} not available",
+                    "available_ports": available_ports,
+                    "status": "failed"
+                }
+
+            # Try to connect and get status
+            result = send_arduino_serial_command("STATUS")
+            if "error" in result:
+                return {"error": result["error"], "status": "failed"}
+            else:
+                return {"message": "Serial connection successful", "status": "connected", "data": result}
+
+        except Exception as e:
+            return {"error": f"Serial test failed: {e}", "status": "failed"}
+    else:
+        # Test Ethernet connection
+        try:
+            result = send_arduino_ethernet_command("status")
+            if "error" in result:
+                return {"error": result["error"], "status": "failed"}
+            else:
+                return {"message": "Ethernet connection successful", "status": "connected", "data": result}
+        except Exception as e:
+            return {"error": f"Ethernet test failed: {e}", "status": "failed"}
+
+def send_to_arduino(command_or_endpoint, data=None):
+    """Send command to Arduino using configured communication method"""
+    if ARDUINO_COMMUNICATION == "SERIAL":
+        # For serial, convert endpoint to command format
+        if command_or_endpoint == "gate/status":
+            return send_arduino_serial_command("STATUS")
+        elif command_or_endpoint == "gate/open":
+            return send_arduino_serial_command("OPEN")
+        elif command_or_endpoint == "gate/close":
+            return send_arduino_serial_command("CLOSE")
+        elif command_or_endpoint == "access/authorized" and data:
+            plate = data.get('plate_number', 'UNKNOWN')
+            authorized = 1 if data.get('authorized', False) else 0
+            return send_arduino_serial_command(f"ACCESS:{plate}:{authorized}")
+        else:
+            return send_arduino_serial_command(command_or_endpoint)
+    else:
+        # Ethernet communication
+        return send_arduino_ethernet_command(command_or_endpoint, data)
+
+def open_gate_arduino(plate_number, owner_name="Unknown", authorized=True):
+    """Send gate open command to Arduino with license plate info"""
+    data = {
+        "plate_number": plate_number,
+        "owner_name": owner_name,
+        "authorized": authorized,
+        "timestamp": datetime.now().isoformat()
+    }
+
+    print(f"🚪 Sending gate command to Arduino for plate: {plate_number}")
+    result = send_to_arduino("access/authorized", data)
+
+    if "error" not in result:
+        print(f"✅ Arduino responded: {result.get('message', 'Gate opened')}")
+    else:
+        print(f"❌ Arduino error: {result['error']}")
+
+    return result
+
+def get_arduino_status():
+    """Get current status from Arduino"""
+    return send_to_arduino("gate/status")
 
 # Initialize systems
 detector = AdvancedLicensePlateDetector()
@@ -1026,6 +1197,223 @@ def simulate_entry_exit():
         flash(f'❌ Unauthorized vehicle {plate_number} denied access!')
     
     return redirect(url_for('admin_dashboard'))
+
+# === ARDUINO CONTROL ENDPOINTS ===
+
+@app.route('/api/arduino/status')
+@login_required
+def api_arduino_status():
+    """Get Arduino gate status"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Admin access required'}), 403
+
+    status = get_arduino_status()
+    return jsonify(status)
+
+@app.route('/api/arduino/open_gate', methods=['POST'])
+@login_required
+def api_arduino_open_gate():
+    """Manually open gate via Arduino"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Admin access required'}), 403
+
+    data = request.get_json() or {}
+    plate_number = data.get('plate_number', 'MANUAL')
+    owner_name = data.get('owner_name', 'Manual Override')
+
+    result = open_gate_arduino(plate_number, owner_name, True)
+
+    # Log the manual override
+    log_entry = AccessLog(
+        plate_number=plate_number,
+        authorized=True,
+        confidence=1.0,
+        gate_action="OPENED",
+        entry_type="ENTRY",
+        owner_info=json.dumps({"source": "manual_override", "user": session.get('username')})
+    )
+    db.session.add(log_entry)
+    db.session.commit()
+
+    return jsonify(result)
+
+@app.route('/api/arduino/close_gate', methods=['POST'])
+@login_required
+def api_arduino_close_gate():
+    """Manually close gate via Arduino"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Admin access required'}), 403
+
+    result = send_to_arduino("gate/close")
+    return jsonify(result)
+
+@app.route('/admin/arduino_control')
+@login_required
+def arduino_control_page():
+    """Arduino control panel"""
+    if not session.get('is_admin'):
+        return redirect(url_for('login'))
+
+    # Get Arduino configuration info
+    config_info = {
+        'communication_method': ARDUINO_COMMUNICATION,
+        'serial_port': ARDUINO_SERIAL_PORT if ARDUINO_COMMUNICATION == 'SERIAL' else None,
+        'ethernet_ip': ARDUINO_IP if ARDUINO_COMMUNICATION == 'ETHERNET' else None,
+        'serial_available': SERIAL_AVAILABLE,
+        'available_ports': get_available_serial_ports() if ARDUINO_COMMUNICATION == 'SERIAL' else []
+    }
+
+    return render_template('arduino_control.html', config=config_info)
+
+# New Arduino Mega 2560 specific endpoints
+@app.route('/api/arduino/test_connection')
+@login_required
+def api_arduino_test_connection():
+    """Test Arduino connection"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Admin access required'}), 403
+
+    result = test_arduino_connection()
+    return jsonify(result)
+
+@app.route('/api/arduino/config')
+@login_required
+def api_arduino_config():
+    """Get Arduino configuration"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Admin access required'}), 403
+
+    config = {
+        'communication_method': ARDUINO_COMMUNICATION,
+        'serial_available': SERIAL_AVAILABLE,
+        'configuration': {}
+    }
+
+    if ARDUINO_COMMUNICATION == 'SERIAL':
+        config['configuration'] = {
+            'serial_port': ARDUINO_SERIAL_PORT,
+            'baud_rate': ARDUINO_BAUD_RATE,
+            'available_ports': get_available_serial_ports()
+        }
+    else:
+        config['configuration'] = {
+            'ip_address': ARDUINO_IP,
+            'port': ARDUINO_PORT
+        }
+
+    return jsonify(config)
+
+@app.route('/api/arduino/available_ports')
+@login_required
+def api_arduino_available_ports():
+    """Get available serial ports"""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Admin access required'}), 403
+
+    ports = get_available_serial_ports()
+    return jsonify({'ports': ports, 'current_port': ARDUINO_SERIAL_PORT})
+
+# === NEW API ENDPOINTS FOR STREAMING & LIVE CAMERA ===
+
+@app.route('/api/detect_frame', methods=['POST'])
+@login_required
+def api_detect_frame():
+    """API endpoint for real-time frame detection (streaming & live camera)"""
+    try:
+        if 'frame' not in request.files:
+            return jsonify({'error': 'No frame provided'}), 400
+        
+        frame_file = request.files['frame']
+        
+        # Read image data
+        frame_data = frame_file.read()
+        nparr = np.frombuffer(frame_data, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if frame is None:
+            return jsonify({'error': 'Invalid image data'}), 400
+        
+        # Use advanced detector to find license plates
+        detector = AdvancedLicensePlateDetector()
+        results = detector.detect_license_plates(frame)
+        
+        plates = []
+        for result in results:
+            plates.append({
+                'text': result.get('text', ''),
+                'confidence': result.get('confidence', 0.0),
+                'bbox': result.get('bbox', []),
+                'cleaned_text': result.get('cleaned_text', '')
+            })
+        
+        return jsonify({
+            'success': True,
+            'plates': plates,
+            'count': len(plates),
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Frame detection error: {str(e)}")
+        return jsonify({
+            'error': f'Detection failed: {str(e)}',
+            'plates': [],
+            'count': 0
+        }), 500
+
+@app.route('/api/save_detected_plate', methods=['POST'])
+@login_required
+def api_save_detected_plate():
+    """API endpoint to auto-save detected plates from live camera"""
+    try:
+        data = request.get_json()
+        
+        if not data or not data.get('plate_text'):
+            return jsonify({'error': 'No plate text provided'}), 400
+        
+        plate_text = data.get('plate_text', '').strip().upper()
+        confidence = data.get('confidence', 0.0)
+        source = data.get('source', 'live_camera')
+        
+        # Check if this plate was recently detected to avoid duplicates
+        recent_detection = PlateDetection.query.filter_by(
+            plate_text=plate_text,
+            user_id=session['user_id']
+        ).order_by(PlateDetection.timestamp.desc()).first()
+        
+        # Only save if not detected in last 30 seconds
+        if recent_detection:
+            time_diff = (datetime.utcnow() - recent_detection.timestamp).total_seconds()
+            if time_diff < 30:
+                return jsonify({
+                    'message': 'Duplicate detection ignored (too recent)',
+                    'saved': False
+                })
+        
+        # Save new detection
+        detection = PlateDetection(
+            user_id=session['user_id'],
+            plate_text=plate_text,
+            confidence=confidence,
+            status='detected_live',
+            category='Unknown',
+            province='Auto-detected',
+            vendor='Live Camera'
+        )
+        
+        db.session.add(detection)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Plate {plate_text} saved successfully',
+            'saved': True,
+            'detection_id': detection.id
+        })
+        
+    except Exception as e:
+        print(f"Save detected plate error: {str(e)}")
+        return jsonify({'error': f'Save failed: {str(e)}'}), 500
 
 @app.route('/logout')
 def logout():
