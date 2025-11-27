@@ -19,6 +19,36 @@
 
 ---
 
+## ⚠️ สิ่งที่ต้องตั้งค่าใน Render (สำคัญ!)
+
+### Root Directory ⚠️ สำคัญมาก!
+**ต้องตั้งค่า:** `license_plate_system`
+
+เพราะ Django project อยู่ใน folder `license_plate_system/` ไม่ใช่ root directory
+
+**วิธีตั้งค่า:**
+1. Scroll ลงไปหา "Advanced" section
+2. คลิก "> Advanced" เพื่อขยาย
+3. ในช่อง **"Root Directory"** ใส่: `license_plate_system`
+
+### Build Command
+```
+cd license_plate_system && pip install -r ../requirements.txt && python manage.py collectstatic --noinput
+```
+
+### Start Command
+```
+cd license_plate_system && gunicorn license_plate_system.wsgi:application
+```
+
+### Environment Variables ที่ต้องเพิ่ม:
+- `SECRET_KEY` = (Generate ใหม่)
+- `DEBUG` = `False`
+- `ALLOWED_HOSTS` = `your-app-name.onrender.com`
+- `DATABASE_URL` = (จาก PostgreSQL database)
+
+---
+
 ## 🎯 วิธี Deploy บน Railway (แนะนำ)
 
 ### ขั้นตอนที่ 1: เตรียม Project
