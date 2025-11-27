@@ -507,7 +507,7 @@
             <div class="register-card">
                 <!-- Brand -->
                 <div class="brand-logo">
-                    <a href="{% url 'authentication:landing' %}" class="brand-name">
+                    <a href="{% url 'home' %}" class="brand-name">
                         <i class="fas fa-shield-alt me-2"></i>LicenseGuard
                     </a>
                     <p class="brand-subtitle">Create your account and start securing your premises today.</p>
@@ -640,9 +640,7 @@
                                    required>
                             <label class="form-check-label" for="terms_accepted">
                                 I agree to the 
-                                <a href="{% url 'authentication:terms_of_service' %}" target="_blank">Terms of Service</a> 
-                                and 
-                                <a href="{% url 'authentication:privacy_policy' %}" target="_blank">Privacy Policy</a>
+                                Terms of Service และ Privacy Policy
                             </label>
                         </div>
 
@@ -684,7 +682,7 @@
 
             <!-- Back to Home -->
             <div class="text-center mt-3">
-                <a href="{% url 'authentication:landing' %}" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">
+                <a href="{% url 'home' %}" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">
                     <i class="fas fa-arrow-left me-2"></i>Back to Home
                 </a>
             </div>

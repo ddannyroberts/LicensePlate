@@ -11,10 +11,13 @@ from vehicle_control.models import UserProfile
 import json
 
 def landing_page(request):
-    """Modern landing page with 3D animations"""
+    """Root page - redirects to login if not authenticated, or dashboard if authenticated"""
     if request.user.is_authenticated:
+        if request.user.is_staff or request.user.is_superuser:
+            return redirect('dashboard:admin_dashboard')
         return redirect('dashboard:home')
-    return render(request, 'authentication/landing.html')
+    # If not authenticated, redirect to login page
+    return redirect('authentication:login')
 
 def login_view(request):
     """Enhanced login page with modern UI"""
@@ -139,7 +142,7 @@ def logout_view(request):
     user_name = request.user.first_name or request.user.username if request.user.is_authenticated else "User"
     logout(request)
     messages.success(request, f'Goodbye {user_name}! You have been logged out successfully.')
-    return redirect('authentication:landing')
+    return redirect('authentication:login')
 
 @login_required
 def profile_view(request):
@@ -172,12 +175,5 @@ def profile_view(request):
 
 def forgot_password(request):
     """Forgot password page (placeholder)"""
-    return render(request, 'authentication/forgot_password.html')
-
-def privacy_policy(request):
-    """Privacy policy page"""
-    return render(request, 'authentication/privacy_policy.html')
-
-def terms_of_service(request):
-    """Terms of service page"""
-    return render(request, 'authentication/terms_of_service.html')
+    messages.info(request, 'Password reset feature will be available soon.')
+    return redirect('authentication:login')

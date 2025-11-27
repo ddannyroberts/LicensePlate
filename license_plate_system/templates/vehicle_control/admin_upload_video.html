@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Video - Admin - LicenseGuard AI{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold">
+                <i class="fas fa-video me-2"></i>Upload Video for Detection
+            </h1>
+            <p class="text-muted">Upload a video file to detect and compare license plates with the database</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="glass-card p-5" data-aos="fade-up">
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    <div class="upload-area" id="uploadArea" style="min-height: 300px;">
+                        <div class="text-center py-5">
+                            <i class="fas fa-cloud-upload-alt fa-4x text-primary mb-4"></i>
+                            <h3>Drag & Drop Video Here</h3>
+                            <p class="text-muted mb-4">or click to browse files</p>
+                            <input type="file" 
+                                   id="videoFile" 
+                                   name="video" 
+                                   accept="video/*" 
+                                   class="d-none" 
+                                   required>
+                            <button type="button" 
+                                    class="btn btn-3d btn-lg" 
+                                    onclick="document.getElementById('videoFile').click()">
+                                <i class="fas fa-folder-open me-2"></i>Choose Video File
+                            </button>
+                            <div class="mt-4">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Supported: MP4, AVI, MOV | Max: 200MB
+                                </small>
+                            </div>
+                        </div>
+                        <div id="selectedFile" class="text-center mt-3" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file-video me-2"></i>
+                                <span id="fileName"></span>
+                                <span id="fileSize" class="ms-2 text-muted"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-3d btn-lg" id="submitBtn">
+                            <i class="fas fa-rocket me-2"></i>Start Processing
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="glass-card p-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <h5 class="mb-3">
+                    <i class="fas fa-info-circle me-2"></i>How It Works
+                </h5>
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <strong>Upload Video:</strong> Select your video file
+                    </li>
+                    <li class="mb-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <strong>Auto Detection:</strong> System detects license plates
+                    </li>
+                    <li class="mb-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <strong>Compare:</strong> Checks against registered database
+                    </li>
+                    <li class="mb-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <strong>Results:</strong> View known and unknown plates
+                    </li>
+                </ul>
+            </div>
+
+            {% if recent_videos %}
+            <div class="glass-card p-4" data-aos="fade-up" data-aos-delay="200">
+                <h5 class="mb-3">
+                    <i class="fas fa-history me-2"></i>Recent Videos
+                </h5>
+                <div class="list-group">
+                    {% for video in recent_videos|slice:":5" %}
+                    <a href="{% url 'vehicle_control:admin_video_detail' video.id %}" 
+                       class="list-group-item list-group-item-action bg-transparent border-secondary text-white">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <i class="fas fa-video me-2"></i>
+                                <small>{{ video.video_file.name|truncatechars:20 }}</small>
+                            </div>
+                            <span class="badge bg-{% if video.status == 'completed' %}success{% elif video.status == 'processing' %}warning{% else %}danger{% endif %}">
+                                {{ video.status|title }}
+                            </span>
+                        </div>
+                        <small class="text-muted">{{ video.upload_timestamp|date:"M d, H:i" }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    const uploadArea = document.getElementById('uploadArea');
+    const videoFile = document.getElementById('videoFile');
+    const selectedFile = document.getElementById('selectedFile');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('video/')) {
+            videoFile.files = files;
+            handleFile(files[0]);
+        }
+    });
+
+    videoFile.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    function handleFile(file) {
+        if (!file.type.startsWith('video/')) {
+            alert('Please select a valid video file.');
+            return;
+        }
+
+        if (file.size > 200 * 1024 * 1024) {
+            alert('File size must be less than 200MB.');
+            return;
+        }
+
+        fileName.textContent = file.name;
+        fileSize.textContent = `(${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+        selectedFile.style.display = 'block';
+        uploadArea.querySelector('.text-center').style.display = 'none';
+    }
+
+    // Form submission
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+        submitBtn.disabled = true;
+    });
+</script>
+{% endblock %}
+{% endblock %}
+

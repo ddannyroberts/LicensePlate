@@ -271,221 +271,288 @@
     <!-- Statistics Grid -->
     <div class="stats-grid">
         <div class="stat-item">
-            <div class="stat-number">{{ stats.total_vehicles|default:"47" }}</div>
-            <div class="stat-label">Total Vehicles</div>
+            <div class="stat-number">{{ stats.total_registered_plates|default:0 }}</div>
+            <div class="stat-label">Registered Plates</div>
         </div>
         <div class="stat-item">
-            <div class="stat-number">{{ stats.total_users|default:"23" }}</div>
-            <div class="stat-label">Active Users</div>
+            <div class="stat-number">{{ stats.total_videos|default:0 }}</div>
+            <div class="stat-label">Videos Processed</div>
         </div>
         <div class="stat-item">
-            <div class="stat-number">{{ stats.today_access|default:"15" }}</div>
-            <div class="stat-label">Today's Access</div>
+            <div class="stat-number">{{ stats.total_known_detections|default:0 }}</div>
+            <div class="stat-label">Known Detections</div>
         </div>
         <div class="stat-item">
-            <div class="stat-number">{{ stats.today_authorized|default:"12" }}</div>
-            <div class="stat-label">Authorized Today</div>
+            <div class="stat-number">{{ stats.total_unknown_detections|default:0 }}</div>
+            <div class="stat-label">Unknown Detections</div>
         </div>
     </div>
 
-    <!-- Control Panel -->
+    <!-- Quick Actions -->
     <div class="control-panel">
         <h4 class="text-white mb-3">
-            <i class="fas fa-cogs me-2"></i>
-            System Controls
+            <i class="fas fa-bolt me-2"></i>
+            Quick Actions
         </h4>
-        <div class="gate-status">
-            <div class="status-indicator status-closed" id="gateStatus"></div>
-            <span class="text-white" id="gateStatusText">Gate Status: CLOSED</span>
-        </div>
         <div class="control-buttons">
-            <button class="control-btn" onclick="controlGate('open')">
-                <i class="fas fa-unlock me-2"></i>Open Gate
-            </button>
-            <button class="control-btn danger" onclick="controlGate('close')">
-                <i class="fas fa-lock me-2"></i>Close Gate
-            </button>
-            <button class="control-btn" onclick="emergencyOpen()">
-                <i class="fas fa-exclamation-triangle me-2"></i>Emergency Open
-            </button>
-            <button class="control-btn" onclick="maintenanceMode()">
-                <i class="fas fa-tools me-2"></i>Maintenance
-            </button>
+            <a href="{% url 'vehicle_control:admin_upload_video' %}" class="control-btn">
+                <i class="fas fa-video me-2"></i>Upload Video
+            </a>
+            <a href="{% url 'vehicle_control:admin_plate_history' %}" class="control-btn">
+                <i class="fas fa-history me-2"></i>Plate History
+            </a>
+            <a href="{% url 'vehicle_control:admin_video_list' %}" class="control-btn">
+                <i class="fas fa-list me-2"></i>Video List
+            </a>
+            <a href="{% url 'admin:index' %}" class="control-btn">
+                <i class="fas fa-cog me-2"></i>Admin Panel
+            </a>
         </div>
     </div>
 
     <!-- Dashboard Grid -->
     <div class="dashboard-grid">
-        <!-- Recent Access Logs -->
+        <!-- Recent Known Plates -->
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="card-title">
-                    <i class="fas fa-history card-icon"></i>
-                    Recent Access Logs
+                    <i class="fas fa-check-circle card-icon"></i>
+                    Recent Known Detections
                 </h5>
-                <a href="{% url 'vehicle_control:access_logs' %}" class="btn btn-sm btn-outline-primary">
+                <a href="{% url 'vehicle_control:admin_plate_history' %}" class="btn btn-sm btn-outline-primary">
                     View All
                 </a>
             </div>
-            <div class="activity-list">
-                {% for log in recent_access_logs|slice:":5" %}
-                <div class="activity-item">
-                    <div class="activity-icon {% if log.authorized %}success{% else %}danger{% endif %}">
-                        <i class="fas {% if log.authorized %}fa-check{% else %}fa-times{% endif %}"></i>
-                    </div>
-                    <div class="activity-info">
-                        <div class="activity-title">{{ log.plate_number|default:"ABC-1234" }}</div>
-                        <div class="activity-subtitle">
-                            {% if log.authorized|default:True %}Access Granted{% else %}Access Denied{% endif %}
+            <div class="row g-3 p-3">
+                {% for known in recent_known|slice:":6" %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="glass-card p-3" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;">
+                        <div class="text-center mb-2">
+                            <small class="text-white-50" style="font-size: 0.75rem;">
+                                <i class="fas fa-check-double text-success me-1"></i>Match Found
+                            </small>
+                        </div>
+                        
+                        <!-- Comparison Images -->
+                        <div class="row g-2 mb-2">
+                            <!-- Detected Image -->
+                            <div class="col-6">
+                                <div class="text-center mb-1">
+                                    <small class="text-white-50" style="font-size: 0.65rem;">Detected</small>
+                                </div>
+                                {% if known.detection_image %}
+                                <div style="position: relative; border-radius: 8px; overflow: hidden; border: 2px solid rgba(79, 172, 254, 0.5);">
+                                    <img src="{{ known.detection_image.url }}" 
+                                         alt="Detected: {{ known.detected_plate_number }}"
+                                         class="img-fluid"
+                                         style="max-height: 80px; width: 100%; object-fit: cover;">
+                                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 0.2rem; text-align: center;">
+                                        <span class="badge bg-info" style="font-size: 0.6rem;">{{ known.detected_plate_number }}</span>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div style="background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px; padding: 1rem 0.5rem; text-align: center; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <i class="fas fa-image fa-2x text-muted mb-1"></i>
+                                    <p class="text-muted small mb-0" style="font-size: 0.6rem;">{{ known.detected_plate_number }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- VS Icon -->
+                            <div class="col-12 text-center my-1">
+                                <i class="fas fa-arrows-alt-h text-primary" style="font-size: 1rem;"></i>
+                            </div>
+                            
+                            <!-- Registered Image -->
+                            <div class="col-6">
+                                <div class="text-center mb-1">
+                                    <small class="text-white-50" style="font-size: 0.65rem;">In Database</small>
+                                </div>
+                                {% if known.registered_plate.plate_image %}
+                                <div style="position: relative; border-radius: 8px; overflow: hidden; border: 2px solid rgba(132, 250, 176, 0.5);">
+                                    <img src="{{ known.registered_plate.plate_image.url }}" 
+                                         alt="Registered: {{ known.registered_plate.plate_number }}"
+                                         class="img-fluid"
+                                         style="max-height: 80px; width: 100%; object-fit: cover;">
+                                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 0.2rem; text-align: center;">
+                                        <span class="badge bg-success" style="font-size: 0.6rem;">{{ known.registered_plate.plate_number }}</span>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div style="background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px; padding: 1rem 0.5rem; text-align: center; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <i class="fas fa-image fa-2x text-muted mb-1"></i>
+                                    <p class="text-muted small mb-0" style="font-size: 0.6rem;">{{ known.registered_plate.plate_number }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 0.5rem; margin-bottom: 0.5rem;">
+                            <div style="font-size: 0.75rem;">
+                                <i class="fas fa-user text-primary me-1" style="font-size: 0.7rem;"></i>
+                                <strong class="text-white" style="font-size: 0.7rem;">{{ known.registered_plate.owner_name|default:"Unknown" }}</strong>
+                            </div>
+                            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.6);">
+                                <i class="fas fa-clock me-1"></i>{{ known.detected_at|timesince }} ago
+                            </div>
                         </div>
                     </div>
-                    <div class="activity-time">{{ log.timestamp|default:"2 min ago"|timesince }}</div>
                 </div>
                 {% empty %}
-                <div class="activity-item">
-                    <div class="activity-icon success">
-                        <i class="fas fa-check"></i>
+                <div class="col-12">
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No known detections yet</p>
+                        <a href="{% url 'vehicle_control:admin_upload_video' %}" class="btn btn-sm btn-outline-primary">
+                            Upload Video to Start
+                        </a>
                     </div>
-                    <div class="activity-info">
-                        <div class="activity-title">ABC-1234</div>
-                        <div class="activity-subtitle">Access Granted</div>
-                    </div>
-                    <div class="activity-time">5 min ago</div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-icon danger">
-                        <i class="fas fa-times"></i>
-                    </div>
-                    <div class="activity-info">
-                        <div class="activity-title">XYZ-9876</div>
-                        <div class="activity-subtitle">Access Denied</div>
-                    </div>
-                    <div class="activity-time">12 min ago</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Recent Detections -->
+        <!-- Recent Videos -->
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="card-title">
                     <i class="fas fa-video card-icon"></i>
-                    Recent Detections
+                    Recent Videos
                 </h5>
-                <a href="{% url 'vehicle_control:upload_video' %}" class="btn btn-sm btn-outline-success">
+                <a href="{% url 'vehicle_control:admin_upload_video' %}" class="btn btn-sm btn-outline-success">
                     Upload Video
                 </a>
             </div>
             <div class="activity-list">
-                {% for detection in recent_detections|slice:":5" %}
+                {% for video in recent_videos|slice:":5" %}
                 <div class="activity-item">
-                    <div class="activity-icon {% if detection.status == 'completed' %}success{% elif detection.status == 'error' %}danger{% else %}warning{% endif %}">
+                    <div class="activity-icon {% if video.status == 'completed' %}success{% elif video.status == 'error' %}danger{% else %}warning{% endif %}">
                         <i class="fas fa-video"></i>
                     </div>
                     <div class="activity-info">
-                        <div class="activity-title">{{ detection.plate_text|default:"Processing..." }}</div>
-                        <div class="activity-subtitle">{{ detection.get_status_display|default:"Completed" }}</div>
+                        <div class="activity-title">
+                            <a href="{% url 'vehicle_control:admin_video_detail' video.id %}" class="text-white text-decoration-none">
+                                Video #{{ video.id }}
+                            </a>
+                        </div>
+                        <div class="activity-subtitle">{{ video.get_status_display|default:"Processing" }}</div>
                     </div>
-                    <div class="activity-time">{{ detection.upload_timestamp|default:"1 min ago"|timesince }}</div>
+                    <div class="activity-time">{{ video.upload_timestamp|timesince }}</div>
                 </div>
                 {% empty %}
                 <div class="activity-item">
-                    <div class="activity-icon success">
+                    <div class="activity-icon warning">
                         <i class="fas fa-video"></i>
                     </div>
                     <div class="activity-info">
-                        <div class="activity-title">ABC-1234</div>
-                        <div class="activity-subtitle">Completed</div>
+                        <div class="activity-title">No videos uploaded yet</div>
+                        <div class="activity-subtitle">Upload a video to start processing</div>
                     </div>
-                    <div class="activity-time">3 min ago</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Gate Control Logs -->
+        <!-- Recent Unknown Plates -->
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="card-title">
-                    <i class="fas fa-door-open card-icon"></i>
-                    Gate Activity
+                    <i class="fas fa-question-circle card-icon"></i>
+                    Recent Unknown Detections
                 </h5>
+                <a href="{% url 'vehicle_control:admin_plate_history' %}" class="btn btn-sm btn-outline-warning">
+                    View All
+                </a>
             </div>
             <div class="activity-list">
-                {% for gate_log in recent_gate_logs|slice:":5" %}
+                {% for unknown in recent_unknown|slice:":5" %}
                 <div class="activity-item">
-                    <div class="activity-icon {% if gate_log.operation == 'open' %}success{% elif gate_log.operation == 'close' %}danger{% else %}warning{% endif %}">
-                        <i class="fas {% if gate_log.operation == 'open' %}fa-unlock{% elif gate_log.operation == 'close' %}fa-lock{% else %}fa-cog{% endif %}"></i>
+                    <div class="activity-icon warning">
+                        <i class="fas fa-question"></i>
                     </div>
                     <div class="activity-info">
-                        <div class="activity-title">{{ gate_log.get_operation_display|default:"Gate Opened" }}</div>
-                        <div class="activity-subtitle">{{ gate_log.triggered_by.username|default:"System" }}</div>
+                        <div class="activity-title">{{ unknown.detected_plate_number|default:"XYZ-9876" }}</div>
+                        <div class="activity-subtitle">Not in database</div>
                     </div>
-                    <div class="activity-time">{{ gate_log.timestamp|default:"30 sec ago"|timesince }}</div>
+                    <div class="activity-time">{{ unknown.detected_at|timesince }}</div>
                 </div>
                 {% empty %}
                 <div class="activity-item">
-                    <div class="activity-icon success">
-                        <i class="fas fa-unlock"></i>
+                    <div class="activity-icon warning">
+                        <i class="fas fa-question"></i>
                     </div>
                     <div class="activity-info">
-                        <div class="activity-title">Gate Opened</div>
-                        <div class="activity-subtitle">Auto Detection</div>
+                        <div class="activity-title">No unknown detections yet</div>
+                        <div class="activity-subtitle">All detected plates are registered</div>
                     </div>
-                    <div class="activity-time">2 min ago</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Top Vehicles -->
+        <!-- Top Registered Plates -->
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="card-title">
                     <i class="fas fa-trophy card-icon"></i>
-                    Most Active Vehicles
+                    Top Registered Plates
                 </h5>
-                <a href="{% url 'vehicle_control:authorized_vehicles' %}" class="btn btn-sm btn-outline-primary">
+                <a href="{% url 'admin:vehicle_control_registeredlicenseplate_changelist' %}" class="btn btn-sm btn-outline-primary">
                     Manage
                 </a>
             </div>
             <div class="top-vehicles-list">
-                {% for vehicle in top_vehicles|slice:":10" %}
+                {% for plate in top_plates|slice:":10" %}
                 <div class="vehicle-item">
-                    <div class="vehicle-plate">{{ vehicle.plate_number|default:"ABC-1234" }}</div>
-                    <div class="vehicle-count">{{ vehicle.access_count|default:"23" }} times</div>
+                    <div class="vehicle-plate">{{ plate.plate_number|default:"ABC-1234" }}</div>
+                    <div class="vehicle-count">{{ plate.owner_name|default:"Owner" }}</div>
                 </div>
                 {% empty %}
                 <div class="vehicle-item">
-                    <div class="vehicle-plate">ABC-1234</div>
-                    <div class="vehicle-count">23 times</div>
-                </div>
-                <div class="vehicle-item">
-                    <div class="vehicle-plate">XYZ-9876</div>
-                    <div class="vehicle-count">18 times</div>
-                </div>
-                <div class="vehicle-item">
-                    <div class="vehicle-plate">DEF-5678</div>
-                    <div class="vehicle-count">12 times</div>
+                    <div class="vehicle-plate">No registered plates yet</div>
+                    <div class="vehicle-count">-</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- System Analytics -->
+        <!-- System Statistics -->
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="card-title">
                     <i class="fas fa-chart-line card-icon"></i>
-                    Weekly Activity
+                    System Statistics
                 </h5>
-                <a href="{% url 'dashboard:analytics' %}" class="btn btn-sm btn-outline-info">
-                    Detailed Analytics
-                </a>
             </div>
-            <div class="chart-container">
-                <p>Interactive chart will be displayed here</p>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">Today's Videos</div>
+                        <div class="activity-subtitle">{{ stats.today_videos|default:0 }} videos processed</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-calendar-week"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">This Week</div>
+                        <div class="activity-subtitle">{{ stats.week_videos|default:0 }} videos processed</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">This Month</div>
+                        <div class="activity-subtitle">{{ stats.month_videos|default:0 }} videos processed</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -496,7 +563,7 @@
                     <i class="fas fa-server card-icon"></i>
                     System Status
                 </h5>
-                <a href="{% url 'dashboard:settings' %}" class="btn btn-sm btn-outline-secondary">
+                <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-secondary">
                     Settings
                 </a>
             </div>
@@ -506,7 +573,16 @@
                         <i class="fas fa-check"></i>
                     </div>
                     <div class="activity-info">
-                        <div class="activity-title">Camera System</div>
+                        <div class="activity-title">Video Processing</div>
+                        <div class="activity-subtitle">Active</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon success">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">License Plate Detection</div>
                         <div class="activity-subtitle">Online</div>
                     </div>
                 </div>
@@ -515,17 +591,8 @@
                         <i class="fas fa-check"></i>
                     </div>
                     <div class="activity-info">
-                        <div class="activity-title">Gate Controller</div>
+                        <div class="activity-title">Database</div>
                         <div class="activity-subtitle">Connected</div>
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="activity-icon success">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="activity-info">
-                        <div class="activity-title">AI Detection</div>
-                        <div class="activity-subtitle">Active</div>
                     </div>
                 </div>
             </div>
@@ -534,41 +601,6 @@
 </div>
 
 <script>
-function controlGate(action) {
-    const statusIndicator = document.getElementById('gateStatus');
-    const statusText = document.getElementById('gateStatusText');
-    
-    if (action === 'open') {
-        statusIndicator.className = 'status-indicator status-open';
-        statusText.textContent = 'Gate Status: OPEN';
-        
-        // Auto close after 10 seconds
-        setTimeout(() => {
-            statusIndicator.className = 'status-indicator status-closed';
-            statusText.textContent = 'Gate Status: CLOSED';
-        }, 10000);
-    } else if (action === 'close') {
-        statusIndicator.className = 'status-indicator status-closed';
-        statusText.textContent = 'Gate Status: CLOSED';
-    }
-    
-    // In a real application, this would send an AJAX request to control the actual gate
-    console.log(`Gate action: ${action}`);
-}
-
-function emergencyOpen() {
-    if (confirm('Are you sure you want to trigger emergency gate opening?')) {
-        controlGate('open');
-        alert('Emergency gate opening activated!');
-    }
-}
-
-function maintenanceMode() {
-    if (confirm('Enable maintenance mode? This will disable automatic gate operations.')) {
-        alert('Maintenance mode enabled. Gate operations are now manual only.');
-    }
-}
-
 // Auto-refresh dashboard every 30 seconds
 setInterval(() => {
     // In a real application, this would fetch updated data

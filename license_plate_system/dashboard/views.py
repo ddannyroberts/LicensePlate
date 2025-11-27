@@ -6,8 +6,8 @@ from django.db.models import Count, Q, Avg
 from django.utils import timezone
 from datetime import datetime, timedelta
 from vehicle_control.models import (
-    AuthorizedVehicle, AccessLog, VehicleDetection, 
-    GateControlLog, SystemSettings
+    RegisteredLicensePlate, VideoDetection,
+    KnownLicensePlate, UnknownLicensePlate
 )
 
 @login_required
@@ -15,39 +15,27 @@ def home_dashboard(request):
     """Main user dashboard"""
     user = request.user
     
-    # Get user's recent detections
-    recent_detections = VehicleDetection.objects.filter(
-        uploaded_by=user
-    ).order_by('-upload_timestamp')[:10]
-    
-    # Get user's recent access logs if admin
-    recent_access = []
-    if user.is_staff:
-        recent_access = AccessLog.objects.all().order_by('-timestamp')[:20]
+    # Get user's registered plates
+    recent_plates = RegisteredLicensePlate.objects.filter(
+        user=user
+    ).order_by('-registered_date')[:10]
     
     # Statistics
     stats = {
-        'total_detections': VehicleDetection.objects.filter(uploaded_by=user).count(),
-        'successful_detections': VehicleDetection.objects.filter(
-            uploaded_by=user, status__in=['completed', 'authorized', 'unauthorized']
-        ).count(),
+        'total_plates': RegisteredLicensePlate.objects.filter(user=user).count(),
+        'recent_plates': recent_plates.count(),
     }
     
     if user.is_staff:
         stats.update({
-            'total_authorized_vehicles': AuthorizedVehicle.objects.filter(is_active=True).count(),
-            'today_access_attempts': AccessLog.objects.filter(
-                timestamp__date=timezone.now().date()
-            ).count(),
-            'authorized_today': AccessLog.objects.filter(
-                timestamp__date=timezone.now().date(),
-                authorized=True
-            ).count(),
+            'total_registered_plates': RegisteredLicensePlate.objects.count(),
+            'total_videos': VideoDetection.objects.count(),
+            'total_known_detections': KnownLicensePlate.objects.count(),
+            'total_unknown_detections': UnknownLicensePlate.objects.count(),
         })
     
     context = {
-        'recent_detections': recent_detections,
-        'recent_access': recent_access,
+        'recent_plates': recent_plates,
         'stats': stats,
         'user': user,
     }
@@ -65,48 +53,33 @@ def admin_dashboard(request):
     
     # Basic statistics
     stats = {
-        'total_vehicles': AuthorizedVehicle.objects.filter(is_active=True).count(),
-        'total_users': VehicleDetection.objects.values('uploaded_by').distinct().count(),
-        'today_access': AccessLog.objects.filter(timestamp__date=today).count(),
-        'today_authorized': AccessLog.objects.filter(
-            timestamp__date=today, authorized=True
-        ).count(),
-        'week_access': AccessLog.objects.filter(timestamp__date__gte=week_ago).count(),
-        'month_detections': VehicleDetection.objects.filter(
-            upload_timestamp__date__gte=month_ago
-        ).count(),
+        'total_registered_plates': RegisteredLicensePlate.objects.count(),
+        'total_videos': VideoDetection.objects.count(),
+        'total_known_detections': KnownLicensePlate.objects.count(),
+        'total_unknown_detections': UnknownLicensePlate.objects.count(),
+        'today_videos': VideoDetection.objects.filter(upload_timestamp__date=today).count(),
+        'week_videos': VideoDetection.objects.filter(upload_timestamp__date__gte=week_ago).count(),
+        'month_videos': VideoDetection.objects.filter(upload_timestamp__date__gte=month_ago).count(),
     }
     
     # Recent activity
-    recent_access_logs = AccessLog.objects.select_related('vehicle').order_by('-timestamp')[:20]
-    recent_detections = VehicleDetection.objects.select_related('uploaded_by').order_by('-upload_timestamp')[:15]
-    recent_gate_logs = GateControlLog.objects.select_related('triggered_by').order_by('-timestamp')[:10]
+    recent_videos = VideoDetection.objects.select_related('uploaded_by').order_by('-upload_timestamp')[:15]
+    recent_known = KnownLicensePlate.objects.select_related('registered_plate', 'video_detection').order_by('-detected_at')[:20]
+    recent_unknown = UnknownLicensePlate.objects.select_related('video_detection').order_by('-detected_at')[:20]
     
-    # Top authorized vehicles (most accessed)
-    top_vehicles = AccessLog.objects.filter(
-        authorized=True, 
-        timestamp__date__gte=week_ago
-    ).values('plate_number').annotate(
-        access_count=Count('id')
-    ).order_by('-access_count')[:10]
+    # Top registered plates
+    top_plates = RegisteredLicensePlate.objects.annotate(
+        detection_count=Count('video_detections')
+    ).order_by('-detection_count')[:10]
     
     context = {
         'stats': stats,
-        'recent_access_logs': recent_access_logs,
-        'recent_detections': recent_detections,
-        'recent_gate_logs': recent_gate_logs,
-        'top_vehicles': top_vehicles,
+        'recent_videos': recent_videos,
+        'recent_known': recent_known,
+        'recent_unknown': recent_unknown,
+        'top_plates': top_plates,
         'today': today,
     }
     
     return render(request, 'dashboard/admin.html', context)
 
-@staff_member_required
-def analytics_view(request):
-    """Advanced analytics and reporting"""
-    return render(request, 'dashboard/analytics.html')
-
-@staff_member_required
-def settings_view(request):
-    """System settings management"""
-    return render(request, 'dashboard/settings.html')

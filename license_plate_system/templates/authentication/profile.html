@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile - LicenseGuard AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-container {
+        max-width: 800px;
+        margin: 2rem auto;
+    }
+
+    .profile-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        padding: 2.5rem;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        margin-bottom: 2rem;
+    }
+
+    .profile-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+        margin: 0 auto 1rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .profile-name {
+        font-size: 2rem;
+        font-weight: 800;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-email {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-control {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1.5px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: #ffffff;
+        padding: 0.8rem 1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        color: #ffffff;
+        outline: none;
+    }
+
+    .form-control:disabled {
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.5);
+        cursor: not-allowed;
+    }
+
+    .btn-save {
+        background: var(--primary-gradient);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        padding: 0.8rem 2rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+
+    .info-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 500;
+    }
+
+    .info-value {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container profile-container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
+            <p class="profile-email">{{ user.email }}</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <h3 class="text-white mb-4"><i class="fas fa-user-edit me-2"></i>Edit Profile</h3>
+            
+            <div class="form-group">
+                <label class="form-label">First Name</label>
+                <input type="text" 
+                       class="form-control" 
+                       name="first_name" 
+                       value="{{ user.first_name }}"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Last Name</label>
+                <input type="text" 
+                       class="form-control" 
+                       name="last_name" 
+                       value="{{ user.last_name }}"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" 
+                       class="form-control" 
+                       name="email" 
+                       value="{{ user.email }}"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="text" 
+                       class="form-control" 
+                       name="phone_number" 
+                       value="{{ profile.phone_number|default:'' }}"
+                       placeholder="Enter your phone number">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Address</label>
+                <textarea class="form-control" 
+                          name="address" 
+                          rows="3"
+                          placeholder="Enter your address">{{ profile.address|default:'' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Profile Picture</label>
+                <input type="file" 
+                       class="form-control" 
+                       name="profile_picture" 
+                       accept="image/*">
+                {% if profile.profile_picture %}
+                    <small class="text-muted mt-2 d-block">Current: {{ profile.profile_picture.name }}</small>
+                {% endif %}
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-save">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </form>
+
+        <div class="info-section">
+            <h4 class="text-white mb-4"><i class="fas fa-info-circle me-2"></i>Account Information</h4>
+            
+            <div class="info-item">
+                <span class="info-label">Username</span>
+                <span class="info-value">{{ user.username }}</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">Account Type</span>
+                <span class="info-value">
+                    {% if user.is_staff %}
+                        <span class="badge bg-primary">Admin</span>
+                    {% else %}
+                        <span class="badge bg-secondary">User</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">Member Since</span>
+                <span class="info-value">{{ user.date_joined|date:"F d, Y" }}</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">Last Login</span>
+                <span class="info-value">{{ user.last_login|date:"F d, Y H:i"|default:"Never" }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

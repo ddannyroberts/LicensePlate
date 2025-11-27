@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Register License Plate - LicenseGuard AI{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="glass-card p-5" data-aos="fade-up">
+                <div class="text-center mb-4">
+                    <h1 class="display-5 fw-bold mb-3">
+                        <i class="fas fa-car me-2"></i>Register License Plate
+                    </h1>
+                    <p class="text-muted">Register your vehicle's license plate with an image</p>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" id="registerForm">
+                    {% csrf_token %}
+                    
+                    <!-- License Plate Image Upload -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-image me-2"></i>License Plate Image *
+                        </label>
+                        <div class="upload-area" id="uploadArea" style="min-height: 300px;">
+                            <div class="text-center py-5" id="uploadPlaceholder">
+                                <i class="fas fa-cloud-upload-alt fa-4x text-primary mb-3"></i>
+                                <h4 class="mb-2">Drag & Drop Image Here</h4>
+                                <p class="text-muted mb-4">or click to browse</p>
+                                <input type="file" 
+                                       id="plateImage" 
+                                       name="plate_image" 
+                                       accept="image/*" 
+                                       class="d-none" 
+                                       required>
+                                <button type="button" 
+                                        class="btn btn-3d btn-lg" 
+                                        onclick="document.getElementById('plateImage').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Choose Image
+                                </button>
+                            </div>
+                            <div id="imagePreview" class="text-center mt-3" style="display: none;">
+                                <img id="previewImg" src="" alt="Preview" class="img-fluid rounded shadow-lg" style="max-height: 400px; border: 3px solid rgba(102, 126, 234, 0.3);">
+                                <div class="mt-3">
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm" 
+                                            onclick="removeImage()">
+                                        <i class="fas fa-times me-1"></i>Remove Image
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Required Fields -->
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-hashtag me-2"></i>License Plate Number *
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-custom" 
+                                   name="plate_number" 
+                                   placeholder="ABC1234"
+                                   required
+                                   maxlength="20">
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-user me-2"></i>Owner Name *
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-custom" 
+                                   name="owner_name" 
+                                   placeholder="John Doe"
+                                   required>
+                        </div>
+                    </div>
+
+                    <!-- Hidden fields with default values -->
+                    <input type="hidden" name="vehicle_type" value="car">
+                    <input type="hidden" name="vehicle_brand" value="">
+                    <input type="hidden" name="vehicle_model" value="">
+                    <input type="hidden" name="vehicle_color" value="">
+                    <input type="hidden" name="owner_contact" value="">
+                    <input type="hidden" name="notes" value="">
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-3d btn-lg">
+                            <i class="fas fa-save me-2"></i>Register License Plate
+                        </button>
+                        <a href="{% url 'vehicle_control:my_plates' %}" class="btn btn-outline-light">
+                            <i class="fas fa-arrow-left me-2"></i>Back to My Plates
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    const uploadArea = document.getElementById('uploadArea');
+    const plateImage = document.getElementById('plateImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+            plateImage.files = files;
+            showPreview(files[0]);
+        }
+    });
+
+    plateImage.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            showPreview(e.target.files[0]);
+        }
+    });
+
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            imagePreview.style.display = 'block';
+            document.getElementById('uploadPlaceholder').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeImage() {
+        plateImage.value = '';
+        imagePreview.style.display = 'none';
+        document.getElementById('uploadPlaceholder').style.display = 'block';
+    }
+</script>
+{% endblock %}
+{% endblock %}
+

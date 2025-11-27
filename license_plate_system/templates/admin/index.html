@@ -1,0 +1,123 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Statistics Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--glass-bg);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card.primary {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        border-left: 4px solid #667eea;
+    }
+
+    .stat-card.success {
+        background: linear-gradient(135deg, rgba(132, 250, 176, 0.1), rgba(143, 211, 244, 0.1));
+        border-left: 4px solid #84fab0;
+    }
+
+    .stat-card.warning {
+        background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
+        border-left: 4px solid #f093fb;
+    }
+
+    .stat-card.info {
+        background: linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.1));
+        border-left: 4px solid #4facfe;
+    }
+
+    .stat-card i {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .stat-card.primary i { color: #667eea; }
+    .stat-card.success i { color: #84fab0; }
+    .stat-card.warning i { color: #f093fb; }
+    .stat-card.info i { color: #4facfe; }
+
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin: 0.5rem 0;
+        color: #333;
+    }
+
+    .stat-card p {
+        color: #666;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    /* Module Enhancements */
+    .module {
+        position: relative;
+    }
+
+    .module::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--primary-gradient);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .module:hover::before {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<div class="stats-grid">
+    <div class="stat-card primary">
+        <i class="fas fa-car"></i>
+        <h3>{{ stats.total_registered_plates|default:0 }}</h3>
+        <p>Registered Plates</p>
+    </div>
+    <div class="stat-card success">
+        <i class="fas fa-video"></i>
+        <h3>{{ stats.total_videos|default:0 }}</h3>
+        <p>Videos Processed</p>
+    </div>
+    <div class="stat-card warning">
+        <i class="fas fa-check-double"></i>
+        <h3>{{ stats.total_known_detections|default:0 }}</h3>
+        <p>Known Detections</p>
+    </div>
+    <div class="stat-card info">
+        <i class="fas fa-question-circle"></i>
+        <h3>{{ stats.total_unknown_detections|default:0 }}</h3>
+        <p>Unknown Detections</p>
+    </div>
+</div>
+
+{{ block.super }}
+{% endblock %}
