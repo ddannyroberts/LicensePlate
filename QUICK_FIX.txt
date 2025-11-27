@@ -1,0 +1,31 @@
+🚨 แก้ไข Build Error ใน Render
+
+วิธีที่ 1 (แนะนำ):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Root Directory: license_plate_system
+
+Build Command:
+pip install -r ../requirements.txt && python manage.py collectstatic --noinput
+
+Start Command:
+gunicorn license_plate_system.wsgi:application
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+วิธีที่ 2:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Root Directory: (ว่างเปล่า)
+
+Build Command:
+pip install -r requirements.txt && cd license_plate_system && python manage.py collectstatic --noinput
+
+Start Command:
+cd license_plate_system && gunicorn license_plate_system.wsgi:application
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ขั้นตอน:
+1. ไปที่ Render Dashboard → Settings
+2. ตั้ง Root Directory (ถ้าเลือกวิธีที่ 1)
+3. เปลี่ยน Build Command
+4. เปลี่ยน Start Command
+5. Save Changes
+6. Manual Deploy
