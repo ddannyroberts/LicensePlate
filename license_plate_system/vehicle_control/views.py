@@ -19,7 +19,7 @@ from .models import (
     RegisteredLicensePlate, VideoDetection, 
     KnownLicensePlate, UnknownLicensePlate
 )
-from .detection import AdvancedLicensePlateDetector as LicensePlateDetector
+from .detection import AdvancedLicensePlateDetector, get_detector
 
 # ==================== USER VIEWS ====================
 
@@ -147,7 +147,8 @@ def process_video_detection(video_detection, video_path):
     from django.core.files.storage import default_storage
     from django.core.files.base import ContentFile
     
-    detector = AdvancedLicensePlateDetector()
+    # Use lazy-loaded detector to avoid startup delays
+    detector = get_detector()
     cap = cv2.VideoCapture(video_path)
     frame_count = 0
     frame_skip = 30  # Process every 30th frame

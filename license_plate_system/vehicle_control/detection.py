@@ -259,5 +259,16 @@ class AdvancedLicensePlateDetector:
         
         return None
 
-# Global detector instance
-detector_instance = AdvancedLicensePlateDetector()
+# Global detector instance (lazy loading to avoid startup delays and memory issues)
+_detector_instance = None
+_lock = threading.Lock()
+
+def get_detector():
+    """Get or create detector instance (lazy loading to avoid startup delays)"""
+    global _detector_instance
+    if _detector_instance is None:
+        with _lock:
+            # Double-check pattern to avoid race conditions
+            if _detector_instance is None:
+                _detector_instance = AdvancedLicensePlateDetector()
+    return _detector_instance
