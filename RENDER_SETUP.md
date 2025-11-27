@@ -52,19 +52,21 @@ pip install -r ../requirements.txt && python manage.py collectstatic --noinput
 
 **ถ้า Root Directory ตั้งเป็น `license_plate_system` แล้ว:**
 ```
-gunicorn license_plate_system.wsgi:application
+python manage.py migrate && gunicorn license_plate_system.wsgi:application --timeout 120 --workers 2
 ```
 
 **หรือถ้า Root Directory ไม่ได้ตั้ง:**
 ```
-cd license_plate_system && gunicorn license_plate_system.wsgi:application
+cd license_plate_system && python manage.py migrate && gunicorn license_plate_system.wsgi:application --timeout 120 --workers 2
 ```
 
 **วิธีที่ง่ายที่สุด (แนะนำ):**
 ตั้ง Root Directory = `license_plate_system` แล้วใช้:
 ```
-gunicorn license_plate_system.wsgi:application
+python manage.py migrate && gunicorn license_plate_system.wsgi:application --timeout 120 --workers 2
 ```
+
+**หมายเหตุ:** `migrate` จะรันทุกครั้งที่ start เพื่อให้แน่ใจว่า database schema ถูกต้อง
 
 ---
 
