@@ -34,30 +34,41 @@ def login_view(request):
             return redirect('dashboard:home')
         
         if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        remember_me = request.POST.get('remember_me')
-        
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+            remember_me = request.POST.get('remember_me')
             
-            # Set session expiry based on remember me
-            if not remember_me:
-                request.session.set_expiry(0)  # Browser close
+            user = authenticate(request, username=username, password=password)
+            if user:
+                login(request, user)
+                
+                # Set session expiry based on remember me
+                if not remember_me:
+                    request.session.set_expiry(0)  # Browser close
+                else:
+                    request.session.set_expiry(1209600)  # 2 weeks
+                
+                messages.success(request, f'Welcome back, {user.first_name or user.username}!')
+                
+                # Redirect based on user type
+                if user.is_staff or user.is_superuser:
+                    return redirect('dashboard:admin_dashboard')
+                return redirect('dashboard:home')
             else:
-                request.session.set_expiry(1209600)  # 2 weeks
-            
-            messages.success(request, f'Welcome back, {user.first_name or user.username}!')
-            
-            # Redirect based on user type
-            if user.is_staff or user.is_superuser:
-                return redirect('dashboard:admin_dashboard')
-            return redirect('dashboard:home')
-        else:
-            messages.error(request, 'Invalid username or password.')
-    
-    return render(request, 'authentication/login.html')
+                messages.error(request, 'Invalid username or password.')
+        
+        return render(request, 'authentication/login.html')
+    except Exception as e:
+        # Error handling for template rendering
+        from django.conf import settings
+        from django.http import HttpResponse
+        if settings.DEBUG:
+            return HttpResponse(f"Error in login_view: {str(e)}<br>Check logs for details.", status=500)
+        # In production, try to render a simple error page
+        try:
+            return render(request, 'authentication/login.html')
+        except:
+            return HttpResponse("An error occurred. Please contact the administrator.", status=500)
 
 def register_view(request):
     """Comprehensive registration system"""
