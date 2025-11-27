@@ -6,7 +6,7 @@ services:
     plan: free
     rootDir: license_plate_system
     buildCommand: pip install -r ../requirements.txt && python manage.py collectstatic --noinput
-    startCommand: gunicorn license_plate_system.wsgi:application
+    startCommand: gunicorn license_plate_system.wsgi:application --timeout 120 --workers 2
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.5
