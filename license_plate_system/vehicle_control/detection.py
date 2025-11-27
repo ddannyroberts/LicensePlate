@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-import easyocr
+# Don't import easyocr at module level - use lazy loading
+# import easyocr
 import re
 import threading
 import time
@@ -16,6 +17,8 @@ import io
 
 class AdvancedLicensePlateDetector:
     def __init__(self):
+        # Lazy import easyocr only when needed
+        import easyocr
         self.reader = easyocr.Reader(['th', 'en'])
         self.confidence_threshold = 0.6
         self.min_area = 1000
