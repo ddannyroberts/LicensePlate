@@ -12,19 +12,28 @@ import json
 
 def landing_page(request):
     """Root page - redirects to login if not authenticated, or dashboard if authenticated"""
-    if request.user.is_authenticated:
-        if request.user.is_staff or request.user.is_superuser:
-            return redirect('dashboard:admin_dashboard')
-        return redirect('dashboard:home')
-    # If not authenticated, redirect to login page
-    return redirect('authentication:login')
+    try:
+        if request.user.is_authenticated:
+            if request.user.is_staff or request.user.is_superuser:
+                return redirect('dashboard:admin_dashboard')
+            return redirect('dashboard:home')
+        # If not authenticated, redirect to login page
+        return redirect('authentication:login')
+    except Exception as e:
+        # If there's an error, try to show login page directly
+        from django.conf import settings
+        if settings.DEBUG:
+            from django.http import HttpResponse
+            return HttpResponse(f"Error in landing_page: {str(e)}", status=500)
+        return redirect('authentication:login')
 
 def login_view(request):
     """Enhanced login page with modern UI"""
-    if request.user.is_authenticated:
-        return redirect('dashboard:home')
-    
-    if request.method == 'POST':
+    try:
+        if request.user.is_authenticated:
+            return redirect('dashboard:home')
+        
+        if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         remember_me = request.POST.get('remember_me')
