@@ -26,7 +26,18 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-license-plate-system-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+# ALLOWED_HOSTS - Support both local and Render deployment
+allowed_hosts_str = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost')
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
+
+# Add Render domain if provided via environment variable
+render_domain = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if render_domain:
+    ALLOWED_HOSTS.append(render_domain)
+
+# For Render, we need to allow the specific domain
+# The domain will be set via environment variable: RENDER_EXTERNAL_HOSTNAME
+# Example: license-plate-system-juq1.onrender.com
 
 
 # Application definition

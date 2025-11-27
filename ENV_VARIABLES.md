@@ -45,14 +45,33 @@ ALLOWED_HOSTS
 
 **Value:**
 ```
-license-plate-system.onrender.com
+127.0.0.1,localhost
 ```
 
-**หมายเหตุ:** เปลี่ยน `license-plate-system` เป็นชื่อ app ที่คุณตั้งใน Render
+**หมายเหตุ:** สำหรับ local development
 
 ---
 
-### 4. PYTHON_VERSION (Optional แต่แนะนำ)
+### 4. RENDER_EXTERNAL_HOSTNAME (สำหรับ Render)
+
+**Name:**
+```
+RENDER_EXTERNAL_HOSTNAME
+```
+
+**Value:**
+```
+license-plate-system-juq1.onrender.com
+```
+
+**หมายเหตุ:** 
+- เปลี่ยนเป็น domain ที่ Render ให้คุณ (ดูได้จาก Render Dashboard → Web Service → URL)
+- ตัวอย่าง: `license-plate-system-juq1.onrender.com`
+- Django จะเพิ่ม domain นี้เข้าไปใน ALLOWED_HOSTS อัตโนมัติ
+
+---
+
+### 5. PYTHON_VERSION (Optional แต่แนะนำ)
 
 **Name:**
 ```
@@ -66,7 +85,7 @@ PYTHON_VERSION
 
 ---
 
-### 5. DATABASE_URL (หลังจากสร้าง PostgreSQL แล้ว)
+### 6. DATABASE_URL (หลังจากสร้าง PostgreSQL แล้ว)
 
 **Name:**
 ```
