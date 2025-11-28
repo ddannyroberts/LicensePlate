@@ -87,3 +87,4 @@ python manage.py migrate && gunicorn license_plate_system.wsgi:application --tim
 - [Django Migrations](https://docs.djangoproject.com/en/stable/topics/migrations/)
 - [Render Shell](https://render.com/docs/shell)
 
+

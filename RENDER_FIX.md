@@ -94,3 +94,4 @@ cd license_plate_system && gunicorn license_plate_system.wsgi:application
 - [ ] requirements.txt อยู่ใน root directory หรือไม่
 - [ ] manage.py อยู่ใน license_plate_system/ หรือไม่
 
+

@@ -137,3 +137,4 @@ python manage.py migrate && gunicorn license_plate_system.wsgi:application --tim
 
 หลังจาก deploy สำเร็จ ควรเห็นหน้า Login และสามารถใช้งานได้ปกติ!
 
+

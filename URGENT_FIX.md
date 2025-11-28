@@ -172,3 +172,4 @@ Error: `no such table: auth_user` แสดงว่า **database migrations �
 2. **แก้ไข Start Command ใน Dashboard** (แก้ไขถาวร)
 3. **Deploy ใหม่**
 
+

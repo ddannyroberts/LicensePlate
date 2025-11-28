@@ -115,3 +115,4 @@ license_plate_system/
 - [Render Logs Documentation](https://render.com/docs/logs)
 - [Django Debugging](https://docs.djangoproject.com/en/stable/howto/deployment/checklist/)
 
+
