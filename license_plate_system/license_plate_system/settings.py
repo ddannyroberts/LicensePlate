@@ -188,3 +188,25 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024  # 200MB
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# CSRF and Session Settings for Production
+CSRF_COOKIE_SECURE = not DEBUG  # True in production (HTTPS only)
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Session Cookie Settings
+SESSION_COOKIE_SECURE = not DEBUG  # True in production (HTTPS only)
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = []
+
+# Add Render domain to trusted origins
+if render_domain:
+    CSRF_TRUSTED_ORIGINS = [
+        f'https://{render_domain}',
+    ]
+    # Also ensure domain is in ALLOWED_HOSTS
+    if render_domain not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(render_domain)
